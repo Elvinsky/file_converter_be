@@ -1,0 +1,78 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: file-converter-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-app}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./file-converter-server
+      dockerfile: Dockerfile
+    container_name: file-converter-backend
+    environment:
+      PORT: ${PORT:-3007}
+      NODE_ENV: ${NODE_ENV:-production}
+      COOKIE_SECRET: ${COOKIE_SECRET:-my-secret}
+      HEALTH_CHECK_ENABLED: ${HEALTH_CHECK_ENABLED:-false}
+      THROTTLE_GLOBAL_TTL: ${THROTTLE_GLOBAL_TTL:-10000}
+      THROTTLE_GLOBAL_LIMIT: ${THROTTLE_GLOBAL_LIMIT:-10}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      POSTGRES_SYNCHRONIZE: ${POSTGRES_SYNCHRONIZE:-false}
+      POSTGRES_LOGGING: ${POSTGRES_LOGGING:-false}
+      POSTGRES_MIGRATIONS_RUN: ${POSTGRES_MIGRATIONS_RUN:-true}
+    ports:
+      - "${PORT:-3007}:${PORT:-3007}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:${PORT:-3007}/status",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./file-converter-app
+      dockerfile: Dockerfile
+    container_name: file-converter-frontend
+    environment:
+      NEXT_PUBLIC_SERVER_URL: http://backend:${PORT:-3007}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    driver: local

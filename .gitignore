@@ -1,0 +1,3 @@
+# Root-level env file used by `docker compose up` (see .env.example)
+.env
+!.env.example
