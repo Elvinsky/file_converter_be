@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@/core/config/config.module';
 import { DatabaseModule } from '@/core/database/database.module';
 import { HealthModule } from '@/core/health/health.module';
+import { MailModule } from '@/core/mail/mail.module';
 import { ThrottlerModule } from '@/core/throttler/throttler.module';
 
 /**
@@ -18,6 +19,7 @@ import { StatusModule } from '@/modules/status/modules/status.module';
     ConfigModule,
     DatabaseModule,
     HealthModule,
+    MailModule,
     ThrottlerModule,
     /**
      *

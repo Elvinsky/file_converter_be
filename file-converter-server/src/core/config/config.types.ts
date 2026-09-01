@@ -29,4 +29,35 @@ export interface Config {
   POSTGRES_SYNCHRONIZE?: boolean;
   POSTGRES_LOGGING?: boolean;
   POSTGRES_MIGRATIONS_RUN?: boolean;
+
+  /**
+   * Redis options
+   */
+  REDIS_HOST: string;
+  REDIS_PORT: number;
+  REDIS_PASSWORD?: string;
+
+  /**
+   * OTP options
+   */
+  OTP_TTL_SECONDS: number;
+  OTP_LENGTH: number;
+  OTP_MAX_ATTEMPTS: number;
+
+  /**
+   * SMTP options
+   */
+  SMTP_HOST: string;
+  SMTP_PORT: number;
+  SMTP_SECURE: boolean;
+  SMTP_USER: string;
+  SMTP_PASSWORD: string;
+  SMTP_FROM: string;
+  MAILTRAP_TOKEN?: string;
+
+  /**
+   * JWT options
+   */
+  JWT_SECRET: string;
+  JWT_EXPIRES_IN: string;
 }
