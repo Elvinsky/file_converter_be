@@ -1,4 +1,4 @@
-import { StatusController } from './status.controller';
+import { StatusController } from '../controllers/status.controller';
 
 describe('StatusController', () => {
   it('returns ok status', () => {

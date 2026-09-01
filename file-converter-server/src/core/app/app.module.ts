@@ -10,8 +10,8 @@ import { ThrottlerModule } from '@/core/throttler/throttler.module';
  * Application modules
  *
  */
-import { UsersModule } from '@/modules/users/users.module';
-import { StatusModule } from '@/modules/status/status.module';
+import { UsersModule } from '@/modules/users/modules/users.module';
+import { StatusModule } from '@/modules/status/modules/status.module';
 
 @Module({
   imports: [
