@@ -25,6 +25,9 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 16, default: UserRole.User })
   role: UserRole;
 
+  @Column({ name: 'is_active', default: false })
+  isActive: boolean;
+
   @CreateDateColumn({ name: 'created_at', select: false })
   createdAt: Date;
 

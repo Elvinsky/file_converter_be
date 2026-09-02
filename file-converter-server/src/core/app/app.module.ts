@@ -14,6 +14,7 @@ import { ThrottlerModule } from '@/core/throttler/throttler.module';
 import { NotificationsModule } from '@/modules/notifications/modules/notifications.module';
 import { StatusModule } from '@/modules/status/modules/status.module';
 import { UsersModule } from '@/modules/users/modules/users.module';
+import { AuthModule } from '@/modules/auth/modules/auth.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { UsersModule } from '@/modules/users/modules/users.module';
     NotificationsModule,
     StatusModule,
     UsersModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
