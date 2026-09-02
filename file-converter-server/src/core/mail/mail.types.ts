@@ -1,20 +1,15 @@
 import type { Options } from 'nodemailer/lib/mailer';
-import type { SendError, SendResponse } from 'mailtrap';
+import type { SentMessageInfo } from 'nodemailer';
 
 export interface SendMailOptions {
   to: string | string[];
   subject: string;
   text?: string;
   html?: string;
-  category?: string;
 }
 
-export type SendMailResult = SendResponse | SendError;
+export type SendMailResult = SentMessageInfo;
 
-export interface MailtrapSendMailOptions extends Options {
-  category?: string;
-}
-
-export interface MailtrapMailTransporter {
-  sendMail(mailOptions: MailtrapSendMailOptions): Promise<SendMailResult>;
+export interface MailTransporter {
+  sendMail(mailOptions: Options): Promise<SendMailResult>;
 }

@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
-import { MailtrapTransport } from 'mailtrap';
+import nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 import { ConfigModule } from '@/core/config/config.module';
 import { ConfigService } from '@/core/config/config.service';
 
 import { MAIL_TRANSPORTER } from './mail.constants';
 import { MailService } from './mail.service';
-import type { MailtrapMailTransporter } from './mail.types';
+import type { MailTransporter } from './mail.types';
 
 @Module({
   imports: [ConfigModule],
@@ -15,12 +15,19 @@ import type { MailtrapMailTransporter } from './mail.types';
     {
       provide: MAIL_TRANSPORTER,
       inject: [ConfigService],
-      useFactory: (config: ConfigService): MailtrapMailTransporter =>
-        nodemailer.createTransport(
-          MailtrapTransport({
-            token: config.get('MAILTRAP_TOKEN'),
-          }),
-        ) as MailtrapMailTransporter,
+      useFactory: (config: ConfigService): MailTransporter => {
+        const transportOptions: SMTPTransport.Options = {
+          host: config.get('SMTP_HOST'),
+          port: config.get('SMTP_PORT'),
+          secure: config.get('SMTP_SECURE'),
+          auth: {
+            user: config.get('SMTP_USER'),
+            pass: config.get('SMTP_PASSWORD'),
+          },
+        };
+
+        return nodemailer.createTransport(transportOptions);
+      },
     },
     MailService,
   ],

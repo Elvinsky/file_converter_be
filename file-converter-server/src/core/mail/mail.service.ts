@@ -4,7 +4,7 @@ import { ConfigService } from '@/core/config/config.service';
 
 import { MAIL_TRANSPORTER } from './mail.constants';
 import type {
-  MailtrapMailTransporter,
+  MailTransporter,
   SendMailOptions,
   SendMailResult,
 } from './mail.types';
@@ -15,16 +15,17 @@ export class MailService {
 
   constructor(
     @Inject(MAIL_TRANSPORTER)
-    private readonly transporter: MailtrapMailTransporter,
+    private readonly transporter: MailTransporter,
     private readonly config: ConfigService,
   ) {}
 
   async sendMail(options: SendMailOptions): Promise<SendMailResult> {
-    const token = this.config.get('MAILTRAP_TOKEN');
+    const user = this.config.get('SMTP_USER');
+    const password = this.config.get('SMTP_PASSWORD');
 
-    if (!token) {
+    if (!user || !password) {
       throw new Error(
-        'MAILTRAP_TOKEN is not set. Create an API token at https://mailtrap.io/api-tokens and add it to your .env file.',
+        'SMTP_USER and SMTP_PASSWORD must be set in your .env file. For Gmail, use your email and a Google App Password (https://myaccount.google.com/apppasswords).',
       );
     }
 
@@ -34,7 +35,6 @@ export class MailService {
       subject: options.subject,
       text: options.text,
       html: options.html,
-      category: options.category,
     });
 
     this.logger.log(`Email sent to ${this.formatRecipients(options.to)}`);

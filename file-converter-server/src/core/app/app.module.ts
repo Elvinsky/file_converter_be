@@ -11,8 +11,9 @@ import { ThrottlerModule } from '@/core/throttler/throttler.module';
  * Application modules
  *
  */
-import { UsersModule } from '@/modules/users/modules/users.module';
+import { NotificationsModule } from '@/modules/notifications/modules/notifications.module';
 import { StatusModule } from '@/modules/status/modules/status.module';
+import { UsersModule } from '@/modules/users/modules/users.module';
 
 @Module({
   imports: [
@@ -26,8 +27,9 @@ import { StatusModule } from '@/modules/status/modules/status.module';
      * Application modules
      *
      */
-    UsersModule,
+    NotificationsModule,
     StatusModule,
+    UsersModule,
   ],
 })
 export class AppModule {}

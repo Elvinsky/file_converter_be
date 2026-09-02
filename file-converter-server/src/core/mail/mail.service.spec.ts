@@ -12,15 +12,14 @@ describe('MailService', () => {
 
   beforeEach(async () => {
     transporter = {
-      sendMail: jest
-        .fn()
-        .mockResolvedValue({ success: true, message_ids: ['test-id'] }),
+      sendMail: jest.fn().mockResolvedValue({ messageId: 'test-id' }),
     };
     configService = {
       get: jest.fn((key: string) => {
         const values: Record<string, string> = {
-          MAILTRAP_TOKEN: 'test-token',
-          SMTP_FROM: 'File Converter <noreply@example.com>',
+          SMTP_USER: 'sender@gmail.com',
+          SMTP_PASSWORD: 'app-password',
+          SMTP_FROM: 'File Converter <sender@gmail.com>',
         };
 
         return values[key];
@@ -42,31 +41,33 @@ describe('MailService', () => {
     expect(service).toBeDefined();
   });
 
-  it('sends mail through Mailtrap transport', async () => {
+  it('sends mail through SMTP transport', async () => {
     await service.sendMail({
       to: 'user@example.com',
       subject: 'Test',
       text: 'Hello',
-      category: 'Integration Test',
     });
 
     expect(transporter.sendMail).toHaveBeenCalledWith({
-      from: 'File Converter <noreply@example.com>',
+      from: 'File Converter <sender@gmail.com>',
       to: 'user@example.com',
       subject: 'Test',
       text: 'Hello',
       html: undefined,
-      category: 'Integration Test',
     });
   });
 
-  it('throws when MAILTRAP_TOKEN is missing', async () => {
+  it('throws when SMTP credentials are missing', async () => {
     configService.get.mockImplementation((key: string) => {
-      if (key === 'MAILTRAP_TOKEN') {
+      if (key === 'SMTP_USER') {
         return '';
       }
 
-      return 'File Converter <noreply@example.com>';
+      if (key === 'SMTP_PASSWORD') {
+        return '';
+      }
+
+      return 'File Converter <sender@gmail.com>';
     });
 
     await expect(
@@ -75,6 +76,6 @@ describe('MailService', () => {
         subject: 'Test',
         text: 'Hello',
       }),
-    ).rejects.toThrow('MAILTRAP_TOKEN is not set');
+    ).rejects.toThrow('SMTP_USER and SMTP_PASSWORD must be set');
   });
 });

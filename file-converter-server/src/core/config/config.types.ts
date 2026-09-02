@@ -53,7 +53,6 @@ export interface Config {
   SMTP_USER: string;
   SMTP_PASSWORD: string;
   SMTP_FROM: string;
-  MAILTRAP_TOKEN?: string;
 
   /**
    * JWT options
