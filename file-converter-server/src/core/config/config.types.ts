@@ -59,4 +59,10 @@ export interface Config {
    */
   JWT_SECRET: string;
   JWT_EXPIRES_IN: string;
+
+  /**
+   * Seeded admin user (used by the initial admin migration)
+   */
+  ADMIN_EMAIL: string;
+  ADMIN_PASSWORD: string;
 }

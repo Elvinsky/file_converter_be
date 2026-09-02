@@ -7,7 +7,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-app}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      # Host publish port (POSTGRES_HOST_PORT). Inside the compose network the
+      # DB still listens on 5432; backend always connects via service DNS:5432.
+      - "${POSTGRES_HOST_PORT:-${POSTGRES_PORT:-5432}}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
@@ -35,7 +37,7 @@ services:
     image: redis:7-alpine
     container_name: file-converter-redis
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${REDIS_HOST_PORT:-${REDIS_PORT:-6379}}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -76,6 +78,8 @@ services:
       SMTP_FROM: ${SMTP_FROM:-"File Converter <noreply@example.com>"}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
     ports:
       - "${PORT:-3007}:${PORT:-3007}"
     depends_on:

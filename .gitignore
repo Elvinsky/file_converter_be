@@ -1,4 +1,6 @@
 # Root-level env file used by `docker compose up` (see .env.example)
 .env
 !.env.example
+# Host ports resolved by scripts/allocate-ports.sh for the active compose stack
+.env.docker.ports
 node_modules
