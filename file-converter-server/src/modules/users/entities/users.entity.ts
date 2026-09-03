@@ -19,7 +19,7 @@ export class UserEntity {
   @Column({ unique: true })
   email: string;
 
-  @Column({ name: 'password_hash', select: false })
+  @Column({ name: 'password_hash' })
   passwordHash: string;
 
   @Column({ type: 'varchar', length: 16, default: UserRole.User })
