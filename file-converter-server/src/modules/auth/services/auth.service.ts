@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { hash } from 'bcrypt';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { compare, hash } from 'bcrypt';
 
 import { MailService } from '@/core/mail/mail.service';
 import { UsersService } from '@/modules/users/services/users.service';
 
 import { RegisterDto } from '../dto/register.dto';
+import { LoginDto } from '../dto/login.dto';
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -29,6 +30,22 @@ export class AuthService {
       text: `Your account for ${user.email} was created successfully. (Test message — OTP will come later.)`,
       html: `<p>Your account for <strong>${user.email}</strong> was created successfully.</p><p><em>Test message — OTP will come later.</em></p>`,
     });
+
+    return user;
+  }
+
+  async login(loginDto: LoginDto) {
+    const user = await this.usersService.findUserByEmail(loginDto.email);
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await compare(loginDto.password, user.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     return user;
   }

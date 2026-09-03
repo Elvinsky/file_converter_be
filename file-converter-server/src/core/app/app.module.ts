@@ -15,9 +15,13 @@ import { NotificationsModule } from '@/modules/notifications/modules/notificatio
 import { StatusModule } from '@/modules/status/modules/status.module';
 import { UsersModule } from '@/modules/users/modules/users.module';
 import { AuthModule } from '@/modules/auth/modules/auth.module';
+import { OtpModule } from '@/modules/otp/modules/otp.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
+
     ConfigModule,
     DatabaseModule,
     HealthModule,
@@ -32,6 +36,7 @@ import { AuthModule } from '@/modules/auth/modules/auth.module';
     StatusModule,
     UsersModule,
     AuthModule,
+    OtpModule,
   ],
 })
 export class AppModule {}
