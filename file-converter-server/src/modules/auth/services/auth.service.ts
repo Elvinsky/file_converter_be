@@ -4,10 +4,13 @@ import { compare, hash } from 'bcrypt';
 import { MailService } from '@/core/mail/mail.service';
 import { UsersService } from '@/modules/users/services/users.service';
 
-import { RegisterDto } from '../dto/register.dto';
-import { LoginDto } from '../dto/login.dto';
+import { JwtService } from '@/modules/jwt/services/jwt.service';
+import { AuthUserPayload, TokenPair } from '@/modules/jwt/jwt.types';
 import { OtpService } from '@/modules/otp/services/otp.service';
 import { VerifyOtpDto } from '@/modules/otp/dto/verify-otp.dto';
+
+import { LoginDto } from '../dto/login.dto';
+import { RegisterDto } from '../dto/register.dto';
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -17,6 +20,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly otpService: OtpService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -62,7 +66,24 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return user;
+    return {
+      user: this.toAuthUser(user),
+      tokens: this.jwtService.createTokenPair(this.toAuthUser(user)),
+    };
+  }
+
+  async refresh(refreshToken: string): Promise<TokenPair> {
+    const payload = this.jwtService.verifyRefreshToken(refreshToken);
+    const user = await this.usersService.findUserById(payload.sub);
+
+    if (!user?.isActive) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    return this.jwtService.refreshTokenPair(
+      refreshToken,
+      this.toAuthUser(user),
+    );
   }
 
   async verifyOTP(verifyOtpDto: VerifyOtpDto) {
@@ -81,5 +102,17 @@ export class AuthService {
     await this.usersService.updateUser(user.id, { isActive: true });
 
     return { message: 'Email verified' };
+  }
+
+  private toAuthUser(user: {
+    id: string;
+    email: string;
+    role: string;
+  }): AuthUserPayload {
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
   }
 }

@@ -65,6 +65,9 @@ export const configValidationSchema = Joi.object<Config>({
   JWT_EXPIRES_IN: Joi.string()
     .pattern(/^\d+[smhd]$/)
     .default('7d'),
+  JWT_REFRESH_TOKEN_EXPIRES_IN: Joi.string()
+    .pattern(/^\d+[smhd]$/)
+    .default('30d'),
 
   /**
    * Seeded admin user

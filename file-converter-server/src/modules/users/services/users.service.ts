@@ -34,6 +34,10 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { email } });
   }
 
+  async findUserById(id: string) {
+    return this.usersRepository.findOne({ where: { id } });
+  }
+
   async updateUser(id: string, user: Partial<UserEntity>) {
     return this.usersRepository.update(id, user);
   }
