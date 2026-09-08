@@ -2,6 +2,8 @@
 
 NestJS backend for the file converter. HTTP kernel is **Fastify** (`@nestjs/platform-fastify`), not Express — use Fastify plugins and types (`NestFastifyApplication`, `app.register(...)`) in `src/main.ts`. Compression (`@fastify/compress`) and cookies (`@fastify/cookie`) are already registered.
 
+OpenAPI/Swagger UI is served at `/docs` (JSON spec at `/docs-json`) when `SWAGGER_ENABLED` is true (the default). Root `docker compose up` passes this through to the backend container.
+
 ## Scripts
 
 ```bash
@@ -52,6 +54,7 @@ CLI uses `src/database/data-source.ts`. At runtime, Nest uses the DataSource fro
 | Purpose       | Library                  |
 |---------------|--------------------------|
 | HTTP          | Fastify (`@nestjs/platform-fastify`) |
+| OpenAPI       | Swagger (`@nestjs/swagger`) at `/docs` |
 | Validation    | Joi                      |
 | ORM           | TypeORM (`@nestjs/typeorm`) |
 | Database      | PostgreSQL (`pg`)        |

@@ -15,6 +15,7 @@ export const configValidationSchema = Joi.object<Config>({
    * Health check options
    */
   HEALTH_CHECK_ENABLED: Joi.boolean().optional().default(false),
+  SWAGGER_ENABLED: Joi.boolean().optional().default(true),
 
   /**
    * Throttler options

@@ -54,6 +54,7 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       COOKIE_SECRET: ${COOKIE_SECRET:-my-secret}
       HEALTH_CHECK_ENABLED: ${HEALTH_CHECK_ENABLED:-false}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-true}
       THROTTLE_GLOBAL_TTL: ${THROTTLE_GLOBAL_TTL:-10000}
       THROTTLE_GLOBAL_LIMIT: ${THROTTLE_GLOBAL_LIMIT:-10}
       POSTGRES_HOST: postgres
@@ -78,6 +79,7 @@ services:
       SMTP_FROM: ${SMTP_FROM:-"File Converter <noreply@example.com>"}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_REFRESH_TOKEN_EXPIRES_IN: ${JWT_REFRESH_TOKEN_EXPIRES_IN:-30d}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
     ports:

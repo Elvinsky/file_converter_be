@@ -30,6 +30,7 @@ The repo root has a `docker-compose.yml` that runs all three services together: 
 
 3. Once all containers report healthy (ports may differ if remapped — check the script output / `.env.docker.ports`):
    - Backend status check: `http://localhost:<PORT>/status` → `{"status":"ok"}`
+   - Swagger UI: `http://localhost:<PORT>/docs` (JSON spec at `/docs-json`). Controlled by `SWAGGER_ENABLED` (default `true`)
    - Frontend: `http://localhost:<FRONTEND_PORT>` → shows "App is running" and, once the backend is reachable, "server is running"
    - Adminer: `http://localhost:<ADMINER_PORT>`
    - Postgres from the host: `localhost:<POSTGRES_HOST_PORT>` (inside Docker the DB remains on `postgres:5432`)

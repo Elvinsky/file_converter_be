@@ -13,6 +13,11 @@ export interface Config {
   HEALTH_CHECK_ENABLED?: boolean;
 
   /**
+   * OpenAPI / Swagger UI at `/docs`
+   */
+  SWAGGER_ENABLED?: boolean;
+
+  /**
    * Throttler options
    */
   THROTTLE_GLOBAL_TTL?: number;

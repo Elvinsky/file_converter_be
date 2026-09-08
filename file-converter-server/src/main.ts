@@ -13,6 +13,7 @@ import {
 
 import { AppModule } from './core/app/app.module';
 import { ConfigService } from '@/core/config/config.service';
+import { setupSwagger } from '@/core/swagger/setup-swagger';
 
 async function bootstrap() {
   initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
@@ -22,7 +23,8 @@ async function bootstrap() {
     new FastifyAdapter(),
   );
 
-  await app.register(compression);
+  const configService = app.get(ConfigService);
+  const port = configService.get('PORT');
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -36,6 +38,7 @@ async function bootstrap() {
       'http://localhost:5174',
       'http://localhost:4200',
       'http://localhost:8080',
+      `http://localhost:${port}`,
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
@@ -43,13 +46,16 @@ async function bootstrap() {
     optionsSuccessStatus: 204,
   });
 
-  const configService = app.get(ConfigService);
-
   await app.register(fastifyCookie, {
     secret: configService.get('COOKIE_SECRET'),
   });
 
-  const port = configService.get('PORT');
+  if (configService.get('SWAGGER_ENABLED')) {
+    setupSwagger(app, port);
+  }
+
+  // Register after Swagger so compressed responses do not break the UI assets.
+  await app.register(compression);
 
   await app.listen(port, '0.0.0.0');
 }
