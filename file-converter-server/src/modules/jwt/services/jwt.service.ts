@@ -98,7 +98,9 @@ export class JwtService {
   }
 
   private getAccessExpiresIn(): jwt.SignOptions['expiresIn'] {
-    return this.configService.get('JWT_EXPIRES_IN') as jwt.SignOptions['expiresIn'];
+    return this.configService.get(
+      'JWT_EXPIRES_IN',
+    ) as jwt.SignOptions['expiresIn'];
   }
 
   private getRefreshExpiresIn(): jwt.SignOptions['expiresIn'] {
