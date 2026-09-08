@@ -1,11 +1,10 @@
 # file_converter_be
 
-- Next.js app: [`file-converter-app`](./file-converter-app)
 - NestJS backend: [`file-converter-server`](./file-converter-server)
 
 ## Running everything with Docker Compose
 
-The repo root has a `docker-compose.yml` that runs all three services together: `postgres`, `backend` (`file-converter-server`) and `frontend` (`file-converter-app`).
+The repo root has a `docker-compose.yml` that runs `postgres`, `adminer`, and `backend` (`file-converter-server`).
 
 1. Copy the example env file and adjust values if needed:
 
@@ -31,7 +30,6 @@ The repo root has a `docker-compose.yml` that runs all three services together: 
 3. Once all containers report healthy (ports may differ if remapped — check the script output / `.env.docker.ports`):
    - Backend status check: `http://localhost:<PORT>/status` → `{"status":"ok"}`
    - Swagger UI: `http://localhost:<PORT>/docs` (JSON spec at `/docs-json`). Controlled by `SWAGGER_ENABLED` (default `true`)
-   - Frontend: `http://localhost:<FRONTEND_PORT>` → shows "App is running" and, once the backend is reachable, "server is running"
    - Adminer: `http://localhost:<ADMINER_PORT>`
    - Postgres from the host: `localhost:<POSTGRES_HOST_PORT>` (inside Docker the DB remains on `postgres:5432`)
 
@@ -41,4 +39,4 @@ The repo root has a `docker-compose.yml` that runs all three services together: 
    ./scripts/compose-up.sh down -v
    ```
 
-The root `.env` (see `.env.example` for documented defaults) configures Postgres credentials, the backend port/secrets, and the frontend port. Inside the Docker network the backend always connects to Postgres via the `postgres` service name, and the frontend talks to the backend via `http://backend:<PORT>` — no manual host wiring required.
+The root `.env` (see `.env.example` for documented defaults) configures Postgres credentials and the backend port/secrets. Inside the Docker network the backend always connects to Postgres via the `postgres` service name.
