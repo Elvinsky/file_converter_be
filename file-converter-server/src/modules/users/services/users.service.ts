@@ -1,7 +1,12 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserEntity } from '../entities/users.entity';
 
 export type CreateUserInput = {
@@ -38,7 +43,34 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id } });
   }
 
-  async updateUser(id: string, user: Partial<UserEntity>) {
+  async getUsers() {
+    return this.usersRepository.find();
+  }
+
+  async getUserById(id: string) {
+    const user = await this.findUserById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  async deleteUser(id: string) {
+    const user = await this.findUserById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.usersRepository.remove(user);
+  }
+
+  async updateUser(id: string, user: UpdateUserDto) {
+    const existingUser = await this.findUserById(id);
+    if (!existingUser) {
+      throw new NotFoundException('User not found');
+    }
+
     return this.usersRepository.update(id, user);
   }
 }
