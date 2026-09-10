@@ -42,7 +42,11 @@ export class UsersController {
   @ApiCookieAuth('access_token')
   @Delete(':id')
   async deleteUser(@Param('id') id: string) {
-    return this.usersService.deleteUser(id);
+    await this.usersService.deleteUser(id);
+    return {
+      message: 'User deleted successfully',
+      id,
+    };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -50,7 +54,11 @@ export class UsersController {
   @ApiCookieAuth('access_token')
   @Put(':id')
   async updateUser(@Param('id') id: string, @Body() user: UpdateUserDto) {
-    return this.usersService.updateUser(id, user);
+    await this.usersService.updateUser(id, user);
+    return {
+      message: 'User updated successfully',
+      id,
+    };
   }
 
   @UseGuards(JwtAuthGuard)
