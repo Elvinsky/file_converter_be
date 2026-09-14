@@ -15,7 +15,9 @@ import { RoleEntity } from './role.entity';
 @Entity('rbac_grants')
 @Unique('UQ_rbac_grants_role_id_permission_id', ['roleId', 'permissionId'])
 export class GrantEntity {
-  @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'PK_rbac_grants' })
+  @PrimaryGeneratedColumn('uuid', {
+    primaryKeyConstraintName: 'PK_rbac_grants',
+  })
   id: string;
 
   @Column({ name: 'role_id', type: 'uuid' })

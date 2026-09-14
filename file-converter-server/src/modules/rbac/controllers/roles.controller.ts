@@ -25,13 +25,13 @@ import {
 
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
-import { CreateRoleDto } from '../dto/create-role.dto';
 import {
+  CreateRoleDto,
   DeleteRoleResponseDto,
   RoleResponseDto,
-} from '../dto/role-response.dto';
-import { UpdateRoleDto } from '../dto/update-role.dto';
-import { RbacService } from '../services/rbac.service';
+  UpdateRoleDto,
+} from '../dto/role.dto';
+import { RoleService } from '../services/role.service';
 
 @ApiTags('RBAC')
 @Controller('admin/rbac/roles')
@@ -41,13 +41,13 @@ import { RbacService } from '../services/rbac.service';
   description: 'Access token is missing or invalid',
 })
 export class RolesController {
-  constructor(private readonly rbacService: RbacService) {}
+  constructor(private readonly roleService: RoleService) {}
 
   @Get()
   @ApiOperation({ summary: 'List roles' })
   @ApiOkResponse({ type: [RoleResponseDto] })
   getRoles() {
-    return this.rbacService.getRoles();
+    return this.roleService.getRoles();
   }
 
   @Post()
@@ -56,7 +56,7 @@ export class RolesController {
   @ApiBadRequestResponse({ description: 'Validation failed' })
   @ApiConflictResponse({ description: 'Role name already exists' })
   createRole(@Body() dto: CreateRoleDto) {
-    return this.rbacService.createRole(dto);
+    return this.roleService.createRole(dto);
   }
 
   @Put(':roleId')
@@ -69,7 +69,7 @@ export class RolesController {
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() dto: UpdateRoleDto,
   ) {
-    return this.rbacService.updateRole(roleId, dto);
+    return this.roleService.updateRole(roleId, dto);
   }
 
   @Delete(':roleId')
@@ -81,7 +81,7 @@ export class RolesController {
     description: 'Cannot delete a role that is assigned to users',
   })
   async deleteRole(@Param('roleId', ParseUUIDPipe) roleId: string) {
-    await this.rbacService.deleteRole(roleId);
+    await this.roleService.deleteRole(roleId);
 
     return {
       message: 'Role deleted successfully',

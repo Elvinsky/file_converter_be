@@ -1,18 +1,17 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
-import { CreateRoleDto } from '../dto/create-role.dto';
-import { UpdateRoleDto } from '../dto/update-role.dto';
+import { CreateRoleDto, UpdateRoleDto } from '../dto/role.dto';
 import { RoleEntity } from '../entities/role.entity';
 import { UserRoleEntity } from '../entities/user-role.entity';
+import {
+  assertRoleNameAvailable,
+  assertRoleNotAssignedToUsers,
+} from '../utilities/asserts';
 
 @Injectable()
-export class RbacService {
+export class RoleService {
   constructor(
     @InjectRepository(RoleEntity)
     private readonly roleRepository: Repository<RoleEntity>,
@@ -33,8 +32,16 @@ export class RbacService {
     return role;
   }
 
+  async findRolesByIds(ids: string[]): Promise<RoleEntity[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    return this.roleRepository.find({ where: { id: In(ids) } });
+  }
+
   async createRole(dto: CreateRoleDto): Promise<RoleEntity> {
-    await this.assertRoleNameAvailable(dto.name);
+    await assertRoleNameAvailable(this.roleRepository, dto.name);
 
     const role = this.roleRepository.create({
       name: dto.name,
@@ -48,7 +55,7 @@ export class RbacService {
     const role = await this.getRoleById(id);
 
     if (dto.name !== undefined && dto.name !== role.name) {
-      await this.assertRoleNameAvailable(dto.name);
+      await assertRoleNameAvailable(this.roleRepository, dto.name);
       role.name = dto.name;
     }
 
@@ -61,24 +68,7 @@ export class RbacService {
 
   async deleteRole(id: string): Promise<void> {
     const role = await this.getRoleById(id);
-
-    const assignedUsers = await this.userRoleRepository.count({
-      where: { roleId: id },
-    });
-
-    if (assignedUsers > 0) {
-      throw new ConflictException(
-        'Cannot delete a role that is assigned to users',
-      );
-    }
-
+    await assertRoleNotAssignedToUsers(this.userRoleRepository, id);
     await this.roleRepository.remove(role);
-  }
-
-  private async assertRoleNameAvailable(name: string): Promise<void> {
-    const existing = await this.roleRepository.findOne({ where: { name } });
-    if (existing) {
-      throw new ConflictException('Role name already exists');
-    }
   }
 }
