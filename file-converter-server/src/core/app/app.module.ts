@@ -16,6 +16,7 @@ import { StatusModule } from '@/modules/status/modules/status.module';
 import { UsersModule } from '@/modules/users/modules/users.module';
 import { AuthModule } from '@/modules/auth/modules/auth.module';
 import { OtpModule } from '@/modules/otp/modules/otp.module';
+import { RbacModule } from '@/modules/rbac/modules/rbac.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -37,6 +38,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     UsersModule,
     AuthModule,
     OtpModule,
+    RbacModule,
   ],
 })
 export class AppModule {}
