@@ -1,0 +1,2 @@
+cd file-converter-server
+npx lint-staged
