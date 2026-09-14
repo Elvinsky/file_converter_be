@@ -104,15 +104,10 @@ export class AuthService {
     return { message: 'Email verified' };
   }
 
-  private toAuthUser(user: {
-    id: string;
-    email: string;
-    role: string;
-  }): AuthUserPayload {
+  private toAuthUser(user: { id: string; email: string }): AuthUserPayload {
     return {
       id: user.id,
       email: user.email,
-      role: user.role,
     };
   }
 }

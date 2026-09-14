@@ -35,7 +35,6 @@ export class JwtService {
     const payload: AccessTokenPayload = {
       sub: user.id,
       email: user.email,
-      role: user.role,
       type: 'access',
     };
 
@@ -79,14 +78,12 @@ export class JwtService {
     type?: string;
     sub?: string;
     email?: string;
-    role?: string;
   } {
     try {
       return jwt.verify(token, this.getSecret()) as jwt.JwtPayload & {
         type?: string;
         sub?: string;
         email?: string;
-        role?: string;
       };
     } catch {
       throw new UnauthorizedException('Invalid or expired token');

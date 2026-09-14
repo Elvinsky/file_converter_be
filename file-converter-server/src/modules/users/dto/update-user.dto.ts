@@ -1,8 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsEmail, IsEnum, IsOptional } from 'class-validator';
-
-import { UserRole } from '../entities/users.entity';
+import { IsBoolean, IsEmail, IsOptional } from 'class-validator';
 
 export class UpdateUserDto {
   @ApiPropertyOptional({ example: 'user@example.com' })
@@ -12,11 +10,6 @@ export class UpdateUserDto {
   @IsEmail()
   @IsOptional()
   email?: string;
-
-  @ApiPropertyOptional({ enum: UserRole, example: UserRole.User })
-  @IsEnum(UserRole)
-  @IsOptional()
-  role?: UserRole;
 
   @ApiPropertyOptional({ example: true })
   @IsBoolean()
