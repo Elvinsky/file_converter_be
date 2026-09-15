@@ -2,6 +2,10 @@ import { Controller, Post } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { MailService } from '@/core/mail/mail.service';
+import {
+  RBAC_ACTIONS,
+  RBAC_RESOURCES,
+} from '@/modules/rbac/decorators/require-permission.constants';
 import { RequirePermission } from '@/modules/rbac/decorators/require-permission.decorator';
 
 import { TestEmailResponseDto } from '../dto/test-email-response.dto';
@@ -13,7 +17,7 @@ const TEST_EMAIL_RECIPIENT = 'mikhnevichnik@gmail.com';
 export class NotificationsController {
   constructor(private readonly mailService: MailService) {}
 
-  @RequirePermission('notifications', 'create')
+  @RequirePermission(RBAC_RESOURCES.EMAIL, RBAC_ACTIONS.CREATE)
   @Post('test-email')
   @ApiOperation({
     summary: 'Send a test email',

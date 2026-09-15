@@ -1,9 +1,15 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { UsersService } from '@/modules/users/services/users.service';
 
+import { RBAC_ROLES } from '../decorators/require-permission.constants';
 import { UpdateUserRolesDto } from '../dto/user-role.dto';
 import { RoleEntity } from '../entities/role.entity';
 import { UserRoleEntity } from '../entities/user-role.entity';
@@ -52,5 +58,24 @@ export class UserRoleService {
     }
 
     return this.getUserRoles(userId);
+  }
+
+  async assignDefaultUserRole(userId: string): Promise<void> {
+    const role = await this.roleService.findRoleByName(RBAC_ROLES.USER);
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+
+    const existing = await this.userRoleRepository.findOne({
+      where: { userId, roleId: role.id },
+    });
+
+    if (existing) {
+      return;
+    }
+
+    await this.userRoleRepository.save(
+      this.userRoleRepository.create({ userId, roleId: role.id }),
+    );
   }
 }

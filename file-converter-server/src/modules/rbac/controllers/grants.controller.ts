@@ -21,6 +21,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import {
+  RBAC_ACTIONS,
+  RBAC_RESOURCES,
+} from '../decorators/require-permission.constants';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import {
   CreateGrantDto,
@@ -36,11 +40,11 @@ export class GrantsController {
   constructor(private readonly grantService: GrantService) {}
 
   @Get()
-  @RequirePermission('rbac', 'read')
+  @RequirePermission(RBAC_RESOURCES.PERMISSIONS, RBAC_ACTIONS.READ)
   @ApiOperation({
     summary: 'List grants',
     description:
-      'Returns role-to-permission rules. Null `actions` means every action on that permission. Requires permission `rbac` + `read`.',
+      'Returns role-to-permission rules. Null `actions` means every action on that permission. Requires permission `permissions` + `read`.',
   })
   @ApiOkResponse({ type: [GrantResponseDto] })
   getGrants() {
@@ -48,11 +52,11 @@ export class GrantsController {
   }
 
   @Post()
-  @RequirePermission('rbac', 'create')
+  @RequirePermission(RBAC_RESOURCES.PERMISSIONS, RBAC_ACTIONS.CREATE)
   @ApiOperation({
     summary: 'Create a grant',
     description:
-      'Allows a role to perform actions on a permission. Role and permission must already exist. One grant per (role, permission). Omit `actions` or send [] for all verbs on that permission. Requires permission `rbac` + `create`.',
+      'Allows a role to perform actions on a permission. Role and permission must already exist. One grant per (role, permission). Omit `actions` or send [] for all verbs on that permission. Requires permission `permissions` + `create`.',
   })
   @ApiCreatedResponse({ type: GrantResponseDto })
   @ApiBadRequestResponse({
@@ -68,11 +72,11 @@ export class GrantsController {
   }
 
   @Put(':grantId')
-  @RequirePermission('rbac', 'update')
+  @RequirePermission(RBAC_RESOURCES.PERMISSIONS, RBAC_ACTIONS.UPDATE)
   @ApiOperation({
     summary: 'Update a grant',
     description:
-      'Changes the role, permission, and/or action subset. Requires permission `rbac` + `update`.',
+      'Changes the role, permission, and/or action subset. Requires permission `permissions` + `update`.',
   })
   @ApiParam({ name: 'grantId', format: 'uuid' })
   @ApiOkResponse({ type: GrantResponseDto })
@@ -92,12 +96,12 @@ export class GrantsController {
   }
 
   @Delete(':grantId')
-  @RequirePermission('rbac', 'delete')
+  @RequirePermission(RBAC_RESOURCES.PERMISSIONS, RBAC_ACTIONS.DELETE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Delete a grant',
     description:
-      'Removes one role-to-permission rule. Does not delete the role or permission. Requires permission `rbac` + `delete`.',
+      'Removes one role-to-permission rule. Does not delete the role or permission. Requires permission `permissions` + `delete`.',
   })
   @ApiParam({ name: 'grantId', format: 'uuid' })
   @ApiOkResponse({ type: DeleteGrantResponseDto })

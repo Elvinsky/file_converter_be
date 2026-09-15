@@ -21,6 +21,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import {
+  RBAC_ACTIONS,
+  RBAC_RESOURCES,
+} from '../decorators/require-permission.constants';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import {
   CreatePermissionDto,
@@ -36,11 +40,11 @@ export class PermissionsController {
   constructor(private readonly permissionService: PermissionService) {}
 
   @Get()
-  @RequirePermission('rbac', 'read')
+  @RequirePermission(RBAC_RESOURCES.PERMISSIONS, RBAC_ACTIONS.READ)
   @ApiOperation({
     summary: 'List permissions',
     description:
-      'Returns the resource catalog (name + allowed actions). Requires permission `rbac` + `read`.',
+      'Returns the resource catalog (name + allowed actions). Requires permission `permissions` + `read`.',
   })
   @ApiOkResponse({ type: [PermissionResponseDto] })
   getPermissions() {
@@ -48,11 +52,11 @@ export class PermissionsController {
   }
 
   @Post()
-  @RequirePermission('rbac', 'create')
+  @RequirePermission(RBAC_RESOURCES.PERMISSIONS, RBAC_ACTIONS.CREATE)
   @ApiOperation({
     summary: 'Create a permission',
     description:
-      'Defines a resource and the actions that may later be granted. Creating a permission does not give anyone access. Requires permission `rbac` + `create`.',
+      'Defines a resource and the actions that may later be granted. Creating a permission does not give anyone access. Requires permission `permissions` + `create`.',
   })
   @ApiCreatedResponse({ type: PermissionResponseDto })
   @ApiBadRequestResponse({ description: 'Validation failed' })
@@ -62,11 +66,11 @@ export class PermissionsController {
   }
 
   @Put(':permissionId')
-  @RequirePermission('rbac', 'update')
+  @RequirePermission(RBAC_RESOURCES.PERMISSIONS, RBAC_ACTIONS.UPDATE)
   @ApiOperation({
     summary: 'Update a permission',
     description:
-      'Updates name and/or the allowed action list. Name must stay unique. Requires permission `rbac` + `update`.',
+      'Updates name and/or the allowed action list. Name must stay unique. Requires permission `permissions` + `update`.',
   })
   @ApiParam({ name: 'permissionId', format: 'uuid' })
   @ApiOkResponse({ type: PermissionResponseDto })
@@ -83,12 +87,12 @@ export class PermissionsController {
   }
 
   @Delete(':permissionId')
-  @RequirePermission('rbac', 'delete')
+  @RequirePermission(RBAC_RESOURCES.PERMISSIONS, RBAC_ACTIONS.DELETE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Delete a permission',
     description:
-      'Deletes a permission. Grants that pointed at it are removed (cascade). Requires permission `rbac` + `delete`.',
+      'Deletes a permission. Grants that pointed at it are removed (cascade). Requires permission `permissions` + `delete`.',
   })
   @ApiParam({ name: 'permissionId', format: 'uuid' })
   @ApiOkResponse({ type: DeletePermissionResponseDto })

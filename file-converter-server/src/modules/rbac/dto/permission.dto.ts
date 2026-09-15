@@ -16,7 +16,7 @@ export class CreatePermissionDto {
   @ApiProperty({
     example: 'users',
     description:
-      'Unique resource name used in @RequirePermission (e.g. users, notifications, rbac).',
+      'Unique resource name used in @RequirePermission (e.g. users, me, permissions).',
     maxLength: 64,
   })
   @Transform(trimString)
@@ -50,7 +50,7 @@ export class UpdatePermissionDto {
   name?: string;
 
   @ApiPropertyOptional({
-    example: ['create', 'read', 'delete'],
+    example: ['read', 'create', 'delete'],
     description: 'Replacement list of actions for this resource.',
     type: [String],
   })

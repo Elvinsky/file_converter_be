@@ -32,6 +32,10 @@ export class RoleService {
     return role;
   }
 
+  async findRoleByName(name: string): Promise<RoleEntity | null> {
+    return this.roleRepository.findOne({ where: { name } });
+  }
+
   async findRolesByIds(ids: string[]): Promise<RoleEntity[]> {
     if (ids.length === 0) {
       return [];

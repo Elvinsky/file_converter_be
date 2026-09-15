@@ -15,6 +15,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import {
+  RBAC_ACTIONS,
+  RBAC_RESOURCES,
+} from '../decorators/require-permission.constants';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { RoleResponseDto } from '../dto/role.dto';
 import { UpdateUserRolesDto } from '../dto/user-role.dto';
@@ -26,11 +30,11 @@ export class UserRolesController {
   constructor(private readonly userRoleService: UserRoleService) {}
 
   @Get()
-  @RequirePermission('rbac', 'read')
+  @RequirePermission(RBAC_RESOURCES.PERMISSIONS, RBAC_ACTIONS.READ)
   @ApiOperation({
     summary: 'List roles assigned to a user',
     description:
-      'Returns the role catalog entries this user currently holds. Requires permission `rbac` + `read`.',
+      'Returns the role catalog entries this user currently holds. Requires permission `permissions` + `read`.',
   })
   @ApiParam({ name: 'userId', format: 'uuid' })
   @ApiOkResponse({ type: [RoleResponseDto] })
@@ -41,11 +45,11 @@ export class UserRolesController {
   }
 
   @Put()
-  @RequirePermission('rbac', 'update')
+  @RequirePermission(RBAC_RESOURCES.PERMISSIONS, RBAC_ACTIONS.UPDATE)
   @ApiOperation({
     summary: 'Replace roles assigned to a user',
     description:
-      "Sets the user's roles to exactly `roleIds`. This is a full replace, not a patch: include existing ids when adding a role. An empty array removes all roles. Requires permission `rbac` + `update`.",
+      "Sets the user's roles to exactly `roleIds`. This is a full replace, not a patch: include existing ids when adding a role. An empty array removes all roles. Requires permission `permissions` + `update`.",
   })
   @ApiParam({ name: 'userId', format: 'uuid' })
   @ApiOkResponse({ type: [RoleResponseDto] })

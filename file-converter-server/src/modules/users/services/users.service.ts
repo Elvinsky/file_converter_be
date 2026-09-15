@@ -1,10 +1,14 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
+import { UserRoleService } from '@/modules/rbac/services/user-role.service';
 
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserEntity } from '../entities/users.entity';
@@ -19,6 +23,8 @@ export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
+    @Inject(forwardRef(() => UserRoleService))
+    private readonly userRoleService: UserRoleService,
   ) {}
 
   async createUser(input: CreateUserInput) {
@@ -32,7 +38,9 @@ export class UsersService {
       passwordHash: input.passwordHash,
     });
 
-    return this.usersRepository.save(user);
+    const saved = await this.usersRepository.save(user);
+    await this.userRoleService.assignDefaultUserRole(saved.id);
+    return saved;
   }
 
   async findUserByEmail(email: string) {
