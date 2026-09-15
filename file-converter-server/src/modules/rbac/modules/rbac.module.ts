@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthModule } from '@/modules/auth/modules/auth.module';
@@ -12,22 +12,25 @@ import { GrantEntity } from '../entities/grant.entity';
 import { PermissionEntity } from '../entities/permission.entity';
 import { RoleEntity } from '../entities/role.entity';
 import { UserRoleEntity } from '../entities/user-role.entity';
+import { AccessService } from '../services/access.service';
 import { GrantService } from '../services/grant.service';
 import { PermissionService } from '../services/permission.service';
 import { RoleService } from '../services/role.service';
 import { UserRoleService } from '../services/user-role.service';
+import { PermissionsGuard } from '../guards/permissions.guard';
 
 const rbacServices = [
   RoleService,
   PermissionService,
   GrantService,
   UserRoleService,
+  AccessService,
 ];
 
 @Module({
   imports: [
     AuthModule,
-    UsersModule,
+    forwardRef(() => UsersModule),
     TypeOrmModule.forFeature([
       RoleEntity,
       PermissionEntity,
@@ -41,7 +44,7 @@ const rbacServices = [
     GrantsController,
     UserRolesController,
   ],
-  providers: rbacServices,
-  exports: [TypeOrmModule, ...rbacServices],
+  providers: [...rbacServices, PermissionsGuard],
+  exports: [TypeOrmModule, PermissionsGuard, ...rbacServices],
 })
 export class RbacModule {}

@@ -9,22 +9,18 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
-  ApiCookieAuth,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
-  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-
+import { RequirePermission } from '../decorators/require-permission.decorator';
 import {
   CreateRoleDto,
   DeleteRoleResponseDto,
@@ -35,15 +31,11 @@ import { RoleService } from '../services/role.service';
 
 @ApiTags('RBAC')
 @Controller('admin/rbac/roles')
-@UseGuards(JwtAuthGuard)
-@ApiCookieAuth('access_token')
-@ApiUnauthorizedResponse({
-  description: 'Access token is missing or invalid',
-})
 export class RolesController {
   constructor(private readonly roleService: RoleService) {}
 
   @Get()
+  @RequirePermission('rbac', 'read')
   @ApiOperation({ summary: 'List roles' })
   @ApiOkResponse({ type: [RoleResponseDto] })
   getRoles() {
@@ -51,6 +43,7 @@ export class RolesController {
   }
 
   @Post()
+  @RequirePermission('rbac', 'create')
   @ApiOperation({ summary: 'Create a role' })
   @ApiCreatedResponse({ type: RoleResponseDto })
   @ApiBadRequestResponse({ description: 'Validation failed' })
@@ -60,6 +53,7 @@ export class RolesController {
   }
 
   @Put(':roleId')
+  @RequirePermission('rbac', 'update')
   @ApiOperation({ summary: 'Update a role' })
   @ApiOkResponse({ type: RoleResponseDto })
   @ApiBadRequestResponse({ description: 'Validation failed' })
@@ -73,6 +67,7 @@ export class RolesController {
   }
 
   @Delete(':roleId')
+  @RequirePermission('rbac', 'delete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a role' })
   @ApiOkResponse({ type: DeleteRoleResponseDto })

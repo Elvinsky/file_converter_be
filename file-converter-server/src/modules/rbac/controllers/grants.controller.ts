@@ -9,22 +9,18 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
-  ApiCookieAuth,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
-  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-
+import { RequirePermission } from '../decorators/require-permission.decorator';
 import {
   CreateGrantDto,
   DeleteGrantResponseDto,
@@ -35,15 +31,11 @@ import { GrantService } from '../services/grant.service';
 
 @ApiTags('RBAC')
 @Controller('admin/rbac/grants')
-@UseGuards(JwtAuthGuard)
-@ApiCookieAuth('access_token')
-@ApiUnauthorizedResponse({
-  description: 'Access token is missing or invalid',
-})
 export class GrantsController {
   constructor(private readonly grantService: GrantService) {}
 
   @Get()
+  @RequirePermission('rbac', 'read')
   @ApiOperation({ summary: 'List grants' })
   @ApiOkResponse({ type: [GrantResponseDto] })
   getGrants() {
@@ -51,6 +43,7 @@ export class GrantsController {
   }
 
   @Post()
+  @RequirePermission('rbac', 'create')
   @ApiOperation({ summary: 'Create a grant' })
   @ApiCreatedResponse({ type: GrantResponseDto })
   @ApiBadRequestResponse({
@@ -66,6 +59,7 @@ export class GrantsController {
   }
 
   @Put(':grantId')
+  @RequirePermission('rbac', 'update')
   @ApiOperation({ summary: 'Update a grant' })
   @ApiOkResponse({ type: GrantResponseDto })
   @ApiBadRequestResponse({
@@ -84,6 +78,7 @@ export class GrantsController {
   }
 
   @Delete(':grantId')
+  @RequirePermission('rbac', 'delete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a grant' })
   @ApiOkResponse({ type: DeleteGrantResponseDto })

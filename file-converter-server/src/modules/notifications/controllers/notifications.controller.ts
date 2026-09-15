@@ -1,16 +1,10 @@
-import { Controller, Post, UseGuards } from '@nestjs/common';
-import {
-  ApiCookieAuth,
-  ApiCreatedResponse,
-  ApiOperation,
-  ApiTags,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+import { Controller, Post } from '@nestjs/common';
+import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { MailService } from '@/core/mail/mail.service';
+import { RequirePermission } from '@/modules/rbac/decorators/require-permission.decorator';
 
 import { TestEmailResponseDto } from '../dto/test-email-response.dto';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 const TEST_EMAIL_RECIPIENT = 'mikhnevichnik@gmail.com';
 
@@ -19,11 +13,7 @@ const TEST_EMAIL_RECIPIENT = 'mikhnevichnik@gmail.com';
 export class NotificationsController {
   constructor(private readonly mailService: MailService) {}
 
-  @UseGuards(JwtAuthGuard)
-  @ApiCookieAuth('access_token')
-  @ApiUnauthorizedResponse({
-    description: 'Access token is missing or invalid',
-  })
+  @RequirePermission('notifications', 'create')
   @Post('test-email')
   @ApiOperation({
     summary: 'Send a test email',

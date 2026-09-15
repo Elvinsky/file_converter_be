@@ -5,35 +5,27 @@ import {
   Param,
   ParseUUIDPipe,
   Put,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiCookieAuth,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
-  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-
+import { RequirePermission } from '../decorators/require-permission.decorator';
 import { RoleResponseDto } from '../dto/role.dto';
 import { UpdateUserRolesDto } from '../dto/user-role.dto';
 import { UserRoleService } from '../services/user-role.service';
 
 @ApiTags('RBAC')
 @Controller('admin/rbac/users/:userId/roles')
-@UseGuards(JwtAuthGuard)
-@ApiCookieAuth('access_token')
-@ApiUnauthorizedResponse({
-  description: 'Access token is missing or invalid',
-})
 export class UserRolesController {
   constructor(private readonly userRoleService: UserRoleService) {}
 
   @Get()
+  @RequirePermission('rbac', 'read')
   @ApiOperation({ summary: 'List roles assigned to a user' })
   @ApiOkResponse({ type: [RoleResponseDto] })
   @ApiNotFoundResponse({ description: 'User not found' })
@@ -42,6 +34,7 @@ export class UserRolesController {
   }
 
   @Put()
+  @RequirePermission('rbac', 'update')
   @ApiOperation({
     summary: 'Replace roles assigned to a user',
     description:

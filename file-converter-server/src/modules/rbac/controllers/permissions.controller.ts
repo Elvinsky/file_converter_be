@@ -9,22 +9,18 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
-  ApiCookieAuth,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
-  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-
+import { RequirePermission } from '../decorators/require-permission.decorator';
 import {
   CreatePermissionDto,
   DeletePermissionResponseDto,
@@ -35,15 +31,11 @@ import { PermissionService } from '../services/permission.service';
 
 @ApiTags('RBAC')
 @Controller('admin/rbac/permissions')
-@UseGuards(JwtAuthGuard)
-@ApiCookieAuth('access_token')
-@ApiUnauthorizedResponse({
-  description: 'Access token is missing or invalid',
-})
 export class PermissionsController {
   constructor(private readonly permissionService: PermissionService) {}
 
   @Get()
+  @RequirePermission('rbac', 'read')
   @ApiOperation({ summary: 'List permissions' })
   @ApiOkResponse({ type: [PermissionResponseDto] })
   getPermissions() {
@@ -51,6 +43,7 @@ export class PermissionsController {
   }
 
   @Post()
+  @RequirePermission('rbac', 'create')
   @ApiOperation({ summary: 'Create a permission' })
   @ApiCreatedResponse({ type: PermissionResponseDto })
   @ApiBadRequestResponse({ description: 'Validation failed' })
@@ -60,6 +53,7 @@ export class PermissionsController {
   }
 
   @Put(':permissionId')
+  @RequirePermission('rbac', 'update')
   @ApiOperation({ summary: 'Update a permission' })
   @ApiOkResponse({ type: PermissionResponseDto })
   @ApiBadRequestResponse({ description: 'Validation failed' })
@@ -73,6 +67,7 @@ export class PermissionsController {
   }
 
   @Delete(':permissionId')
+  @RequirePermission('rbac', 'delete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a permission' })
   @ApiOkResponse({ type: DeletePermissionResponseDto })
