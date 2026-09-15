@@ -29,7 +29,7 @@ const rbacServices = [
 
 @Module({
   imports: [
-    AuthModule,
+    forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
     TypeOrmModule.forFeature([
       RoleEntity,

@@ -7,11 +7,11 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 FROM base AS prod-deps
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules

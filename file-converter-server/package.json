@@ -24,7 +24,7 @@
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
     "migration:show": "npm run typeorm -- migration:show -d src/database/data-source.ts",
-    "prepare": "cd .. && husky file-converter-server/.husky"
+    "prepare": "command -v husky >/dev/null 2>&1 && (cd .. && husky file-converter-server/.husky) || exit 0"
   },
   "dependencies": {
     "@fastify/compress": "^8.3.1",

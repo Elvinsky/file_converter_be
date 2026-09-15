@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  UnauthorizedException,
+  forwardRef,
+} from '@nestjs/common';
 import { compare, hash } from 'bcrypt';
 
 import { MailService } from '@/core/mail/mail.service';
@@ -17,6 +22,7 @@ const BCRYPT_SALT_ROUNDS = 10;
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly otpService: OtpService,

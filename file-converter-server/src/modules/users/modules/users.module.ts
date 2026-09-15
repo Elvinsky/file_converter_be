@@ -11,7 +11,7 @@ import { UsersService } from '../services/users.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity]),
-    AuthModule,
+    forwardRef(() => AuthModule),
     forwardRef(() => RbacModule),
   ],
   providers: [UsersService],
