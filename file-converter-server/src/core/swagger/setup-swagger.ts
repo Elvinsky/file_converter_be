@@ -9,6 +9,15 @@ export function setupSwagger(app: INestApplication, port: number): void {
     .setDescription('HTTP API for the file converter backend.')
     .setVersion('0.0.1')
     .addCookieAuth(
+      'access_token',
+      {
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'access_token',
+      },
+      'access_token',
+    )
+    .addCookieAuth(
       'refresh_token',
       {
         type: 'apiKey',
@@ -16,6 +25,22 @@ export function setupSwagger(app: INestApplication, port: number): void {
         name: 'refresh_token',
       },
       'refresh_token',
+    )
+    .addTag(
+      'RBAC / Roles',
+      'Named role catalog (admin, user, …). Roles have no actions by themselves.',
+    )
+    .addTag(
+      'RBAC / Permissions',
+      'Resource catalog: unique name plus the actions that can be granted (read, create, …).',
+    )
+    .addTag(
+      'RBAC / Grants',
+      'Links a role to a permission with all actions or a subset. This is what a role is allowed to do.',
+    )
+    .addTag(
+      'RBAC / User roles',
+      'Assigns roles to a user. PUT replaces the full set. Users never hold permissions directly.',
     )
     .build();
 

@@ -5,14 +5,21 @@ import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { trimNullableString, trimString } from '../utilities/transform';
 
 export class CreateRoleDto {
-  @ApiProperty({ example: 'admin' })
+  @ApiProperty({
+    example: 'admin',
+    description: 'Unique role name used as the human-readable identifier.',
+    maxLength: 64,
+  })
   @Transform(trimString)
   @IsString()
   @IsNotEmpty()
   @MaxLength(64)
   name: string;
 
-  @ApiPropertyOptional({ example: 'Full access to administration' })
+  @ApiPropertyOptional({
+    example: 'Full access to administration',
+    description: 'Optional description of the role.',
+  })
   @Transform(trimNullableString)
   @IsString()
   @IsOptional()
@@ -38,10 +45,13 @@ export class UpdateRoleDto {
 }
 
 export class RoleResponseDto {
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({ format: 'uuid', description: 'Role surrogate key.' })
   id: string;
 
-  @ApiProperty({ example: 'admin' })
+  @ApiProperty({
+    example: 'admin',
+    description: 'Unique role name.',
+  })
   name: string;
 
   @ApiPropertyOptional({

@@ -17,6 +17,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -29,14 +30,18 @@ import {
 } from '../dto/role.dto';
 import { RoleService } from '../services/role.service';
 
-@ApiTags('RBAC')
+@ApiTags('RBAC / Roles')
 @Controller('admin/rbac/roles')
 export class RolesController {
   constructor(private readonly roleService: RoleService) {}
 
   @Get()
   @RequirePermission('rbac', 'read')
-  @ApiOperation({ summary: 'List roles' })
+  @ApiOperation({
+    summary: 'List roles',
+    description:
+      'Returns all roles ordered by name. Requires permission `rbac` + `read`.',
+  })
   @ApiOkResponse({ type: [RoleResponseDto] })
   getRoles() {
     return this.roleService.getRoles();
@@ -44,7 +49,11 @@ export class RolesController {
 
   @Post()
   @RequirePermission('rbac', 'create')
-  @ApiOperation({ summary: 'Create a role' })
+  @ApiOperation({
+    summary: 'Create a role',
+    description:
+      'Creates a named role. Name must be unique. Requires permission `rbac` + `create`.',
+  })
   @ApiCreatedResponse({ type: RoleResponseDto })
   @ApiBadRequestResponse({ description: 'Validation failed' })
   @ApiConflictResponse({ description: 'Role name already exists' })
@@ -54,9 +63,16 @@ export class RolesController {
 
   @Put(':roleId')
   @RequirePermission('rbac', 'update')
-  @ApiOperation({ summary: 'Update a role' })
+  @ApiOperation({
+    summary: 'Update a role',
+    description:
+      'Updates name and/or description. Name must stay unique. Requires permission `rbac` + `update`.',
+  })
+  @ApiParam({ name: 'roleId', format: 'uuid' })
   @ApiOkResponse({ type: RoleResponseDto })
-  @ApiBadRequestResponse({ description: 'Validation failed' })
+  @ApiBadRequestResponse({
+    description: 'Validation failed or roleId is not a UUID',
+  })
   @ApiNotFoundResponse({ description: 'Role not found' })
   @ApiConflictResponse({ description: 'Role name already exists' })
   updateRole(
@@ -69,8 +85,14 @@ export class RolesController {
   @Delete(':roleId')
   @RequirePermission('rbac', 'delete')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete a role' })
+  @ApiOperation({
+    summary: 'Delete a role',
+    description:
+      'Deletes a role and cascades its grants. Fails with 409 if any user still has this role. Requires permission `rbac` + `delete`.',
+  })
+  @ApiParam({ name: 'roleId', format: 'uuid' })
   @ApiOkResponse({ type: DeleteRoleResponseDto })
+  @ApiBadRequestResponse({ description: 'roleId is not a UUID' })
   @ApiNotFoundResponse({ description: 'Role not found' })
   @ApiConflictResponse({
     description: 'Cannot delete a role that is assigned to users',

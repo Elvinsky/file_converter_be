@@ -13,11 +13,17 @@ import {
 import { trimStringArray } from '../utilities/transform';
 
 export class CreateGrantDto {
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({
+    format: 'uuid',
+    description: 'Existing role id to grant access to.',
+  })
   @IsUUID()
   roleId: string;
 
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({
+    format: 'uuid',
+    description: 'Existing permission id (resource catalog row).',
+  })
   @IsUUID()
   permissionId: string;
 
@@ -65,13 +71,16 @@ export class UpdateGrantDto {
 }
 
 export class GrantResponseDto {
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({ format: 'uuid', description: 'Grant surrogate key.' })
   id: string;
 
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({ format: 'uuid', description: 'Role this grant belongs to.' })
   roleId: string;
 
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({
+    format: 'uuid',
+    description: 'Permission this grant allows.',
+  })
   permissionId: string;
 
   @ApiPropertyOptional({

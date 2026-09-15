@@ -13,14 +13,23 @@ import {
 import { trimString, trimStringArray } from '../utilities/transform';
 
 export class CreatePermissionDto {
-  @ApiProperty({ example: 'users' })
+  @ApiProperty({
+    example: 'users',
+    description:
+      'Unique resource name used in @RequirePermission (e.g. users, notifications, rbac).',
+    maxLength: 64,
+  })
   @Transform(trimString)
   @IsString()
   @IsNotEmpty()
   @MaxLength(64)
   name: string;
 
-  @ApiProperty({ example: ['read', 'update', 'delete'] })
+  @ApiProperty({
+    example: ['read', 'update', 'delete'],
+    description: 'Actions that may be granted on this resource.',
+    type: [String],
+  })
   @Transform(trimStringArray)
   @IsArray()
   @ArrayNotEmpty()
@@ -40,7 +49,11 @@ export class UpdatePermissionDto {
   @MaxLength(64)
   name?: string;
 
-  @ApiPropertyOptional({ example: ['create', 'read', 'delete'] })
+  @ApiPropertyOptional({
+    example: ['create', 'read', 'delete'],
+    description: 'Replacement list of actions for this resource.',
+    type: [String],
+  })
   @Transform(trimStringArray)
   @IsArray()
   @IsOptional()
@@ -53,13 +66,20 @@ export class UpdatePermissionDto {
 }
 
 export class PermissionResponseDto {
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({ format: 'uuid', description: 'Permission surrogate key.' })
   id: string;
 
-  @ApiProperty({ example: 'users' })
+  @ApiProperty({
+    example: 'users',
+    description: 'Unique resource name.',
+  })
   name: string;
 
-  @ApiProperty({ example: ['read', 'update', 'delete'] })
+  @ApiProperty({
+    example: ['read', 'update', 'delete'],
+    description: 'Actions defined on this permission.',
+    type: [String],
+  })
   actions: string[];
 }
 
