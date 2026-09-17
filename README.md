@@ -4,7 +4,7 @@
 
 ## Running everything with Docker Compose
 
-The repo root has a `docker-compose.yml` that runs `postgres`, `adminer`, and `backend` (`file-converter-server`).
+The repo root has a `docker-compose.yml` that runs `postgres`, `adminer`, `minio`, and `backend` (`file-converter-server`).
 
 1. Copy the example env file and adjust values if needed:
 
@@ -32,6 +32,8 @@ The repo root has a `docker-compose.yml` that runs `postgres`, `adminer`, and `b
    - Swagger UI: `http://localhost:<PORT>/docs` (JSON spec at `/docs-json`). Controlled by `SWAGGER_ENABLED` (default `true`)
    - Adminer: `http://localhost:<ADMINER_PORT>`
    - Postgres from the host: `localhost:<POSTGRES_HOST_PORT>` (inside Docker the DB remains on `postgres:5432`)
+   - MinIO API from the host: `localhost:<MINIO_API_HOST_PORT>` (inside Docker the API remains on `minio:9000`)
+   - MinIO console: `http://localhost:<MINIO_CONSOLE_HOST_PORT>` (default `http://localhost:9001`)
 
 4. Tear everything down (and remove the Postgres volume) with:
 
@@ -39,4 +41,4 @@ The repo root has a `docker-compose.yml` that runs `postgres`, `adminer`, and `b
    ./scripts/compose-up.sh down -v
    ```
 
-The root `.env` (see `.env.example` for documented defaults) configures Postgres credentials and the backend port/secrets. Inside the Docker network the backend always connects to Postgres via the `postgres` service name.
+The root `.env` (see `.env.example` for documented defaults) configures Postgres credentials, MinIO/S3 credentials, and the backend port/secrets. Inside the Docker network the backend always connects to Postgres via the `postgres` service name and to MinIO via `http://minio:9000`. A one-shot `minio-init` container creates bucket `file-converter-dev` on first boot. For `npm run start:dev` on the host, keep MinIO in Compose and use `S3_ENDPOINT=http://localhost:9000`.

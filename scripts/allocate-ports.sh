@@ -6,7 +6,8 @@
 #
 # Usage:
 #   source scripts/allocate-ports.sh
-#   # exports POSTGRES_HOST_PORT, ADMINER_PORT, PORT
+#   # exports POSTGRES_HOST_PORT, ADMINER_PORT, PORT,
+#   #         MINIO_API_HOST_PORT, MINIO_CONSOLE_HOST_PORT
 
 set -euo pipefail
 
@@ -120,12 +121,16 @@ _allocate_port() {
 _preferred_postgres="$(_env_or_dotenv POSTGRES_HOST_PORT "$(_env_or_dotenv POSTGRES_PORT 5432)")"
 _preferred_adminer="$(_env_or_dotenv ADMINER_PORT 8080)"
 _preferred_backend="$(_env_or_dotenv PORT 3007)"
+_preferred_minio_api="$(_env_or_dotenv MINIO_API_HOST_PORT 9000)"
+_preferred_minio_console="$(_env_or_dotenv MINIO_CONSOLE_HOST_PORT 9001)"
 
 POSTGRES_HOST_PORT="$(_allocate_port POSTGRES_HOST_PORT "${_preferred_postgres}")"
 ADMINER_PORT="$(_allocate_port ADMINER_PORT "${_preferred_adminer}")"
 PORT="$(_allocate_port PORT "${_preferred_backend}")"
+MINIO_API_HOST_PORT="$(_allocate_port MINIO_API_HOST_PORT "${_preferred_minio_api}")"
+MINIO_CONSOLE_HOST_PORT="$(_allocate_port MINIO_CONSOLE_HOST_PORT "${_preferred_minio_console}")"
 
-export POSTGRES_HOST_PORT ADMINER_PORT PORT
+export POSTGRES_HOST_PORT ADMINER_PORT PORT MINIO_API_HOST_PORT MINIO_CONSOLE_HOST_PORT
 
 # Persist for follow-up tools / `docker compose` in this project root.
 cat > "${_ROOT_DIR}/.env.docker.ports" <<EOF
@@ -134,6 +139,8 @@ cat > "${_ROOT_DIR}/.env.docker.ports" <<EOF
 POSTGRES_HOST_PORT=${POSTGRES_HOST_PORT}
 ADMINER_PORT=${ADMINER_PORT}
 PORT=${PORT}
+MINIO_API_HOST_PORT=${MINIO_API_HOST_PORT}
+MINIO_CONSOLE_HOST_PORT=${MINIO_CONSOLE_HOST_PORT}
 EOF
 
-echo "host ports: postgres=${POSTGRES_HOST_PORT} adminer=${ADMINER_PORT} backend=${PORT}" >&2
+echo "host ports: postgres=${POSTGRES_HOST_PORT} adminer=${ADMINER_PORT} backend=${PORT} minio=${MINIO_API_HOST_PORT} minio-console=${MINIO_CONSOLE_HOST_PORT}" >&2

@@ -75,4 +75,16 @@ export const configValidationSchema = Joi.object<Config>({
    */
   ADMIN_EMAIL: Joi.string().email().required(),
   ADMIN_PASSWORD: Joi.string().min(8).required(),
+
+  /**
+   * S3-compatible object storage
+   */
+  S3_ENDPOINT: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .required(),
+  S3_REGION: Joi.string().default('us-east-1'),
+  S3_ACCESS_KEY: Joi.string().required(),
+  S3_SECRET_KEY: Joi.string().min(8).required(),
+  S3_BUCKET: Joi.string().required(),
+  S3_FORCE_PATH_STYLE: Joi.boolean().default(true),
 });
