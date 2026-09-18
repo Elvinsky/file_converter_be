@@ -5,6 +5,7 @@ import {
 } from '@nestjs/platform-fastify';
 import compression from '@fastify/compress';
 import fastifyCookie from '@fastify/cookie';
+import multipart from '@fastify/multipart';
 import { ValidationPipe } from '@nestjs/common';
 import {
   initializeTransactionalContext,
@@ -48,6 +49,13 @@ async function bootstrap() {
 
   await app.register(fastifyCookie, {
     secret: configService.get('COOKIE_SECRET'),
+  });
+
+  await app.register(multipart, {
+    limits: {
+      fileSize: 10 * 1024 * 1024,
+      files: 1,
+    },
   });
 
   if (configService.get('SWAGGER_ENABLED')) {
