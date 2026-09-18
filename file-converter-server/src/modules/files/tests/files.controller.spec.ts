@@ -8,15 +8,18 @@ import { FilesService } from '../services/files.service';
 describe('FilesController', () => {
   const userId = '11111111-1111-1111-1111-111111111111';
 
-  it('stores an uploaded file for the authenticated user', async () => {
+  it('uploads a file for the authenticated user', async () => {
     const stored = {
-      success: true as const,
-      bucket: 'file-converter-dev',
-      key: `test-uploads/${userId}/1-sample.txt`,
+      id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
       originalName: 'sample.txt',
+      contentType: 'text/plain',
+      sizeBytes: 5,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      userId,
+      publisherEmail: 'user@example.com',
     };
-    const storeTestUpload = jest.fn().mockResolvedValue(stored);
-    const filesService = { storeTestUpload } as unknown as FilesService;
+    const upload = jest.fn().mockResolvedValue(stored);
+    const filesService = { upload } as unknown as FilesService;
 
     const file = {
       filename: 'sample.txt',
@@ -30,13 +33,13 @@ describe('FilesController', () => {
 
     const controller = new FilesController(filesService);
 
-    await expect(controller.testUpload(request)).resolves.toEqual(stored);
-    expect(storeTestUpload).toHaveBeenCalledWith(userId, file);
+    await expect(controller.upload(request)).resolves.toEqual(stored);
+    expect(upload).toHaveBeenCalledWith(userId, file);
   });
 
-  it('rejects requests without a file', async () => {
-    const storeTestUpload = jest.fn();
-    const filesService = { storeTestUpload } as unknown as FilesService;
+  it('rejects upload requests without a file', async () => {
+    const upload = jest.fn();
+    const filesService = { upload } as unknown as FilesService;
     const request = {
       user: { id: userId, email: 'user@example.com' },
       file: jest.fn().mockResolvedValue(undefined),
@@ -44,9 +47,36 @@ describe('FilesController', () => {
 
     const controller = new FilesController(filesService);
 
-    await expect(controller.testUpload(request)).rejects.toBeInstanceOf(
+    await expect(controller.upload(request)).rejects.toBeInstanceOf(
       BadRequestException,
     );
-    expect(storeTestUpload).not.toHaveBeenCalled();
+    expect(upload).not.toHaveBeenCalled();
+  });
+
+  it('lists files for the current user or a requested publisher', async () => {
+    const listFiles = jest.fn().mockResolvedValue([]);
+    const filesService = { listFiles } as unknown as FilesService;
+    const request = {
+      user: { id: userId, email: 'user@example.com' },
+    } as unknown as AuthenticatedRequest;
+
+    const controller = new FilesController(filesService);
+
+    await controller.getFiles(request, { userId });
+    expect(listFiles).toHaveBeenCalledWith(userId, userId);
+  });
+
+  it('lists files for a specific user', async () => {
+    const listFiles = jest.fn().mockResolvedValue([]);
+    const filesService = { listFiles } as unknown as FilesService;
+    const request = {
+      user: { id: userId, email: 'user@example.com' },
+    } as unknown as AuthenticatedRequest;
+
+    const controller = new FilesController(filesService);
+    const targetUserId = '22222222-2222-2222-2222-222222222222';
+
+    await controller.getFilesForUser(request, targetUserId);
+    expect(listFiles).toHaveBeenCalledWith(userId, targetUserId);
   });
 });

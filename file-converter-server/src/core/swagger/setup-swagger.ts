@@ -42,6 +42,10 @@ export function setupSwagger(app: INestApplication, port: number): void {
       'RBAC / User roles',
       'Assigns roles to a user. PUT replaces the full set. Users never hold permissions directly.',
     )
+    .addTag(
+      'Files',
+      'Upload files to S3-compatible storage and list them. Admins see every file with publisher email; other users see only their own.',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

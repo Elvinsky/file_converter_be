@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ConfigModule } from '@/core/config/config.module';
 import { ConfigService } from '@/core/config/config.service';
@@ -7,13 +8,19 @@ import { AuthModule } from '@/modules/auth/modules/auth.module';
 import { RbacModule } from '@/modules/rbac/modules/rbac.module';
 
 import { FilesController } from '../controllers/files.controller';
+import { FileEntity } from '../entities/files.entity';
 import { FilesService } from '../services/files.service';
 import { StorageService } from '../services/storage.service';
 import { OBJECT_STORAGE_CLIENT } from '../storage.constants';
 import type { ObjectStorageClient } from '../storage.types';
 
 @Module({
-  imports: [ConfigModule, AuthModule, RbacModule],
+  imports: [
+    ConfigModule,
+    AuthModule,
+    RbacModule,
+    TypeOrmModule.forFeature([FileEntity]),
+  ],
   controllers: [FilesController],
   providers: [
     {
