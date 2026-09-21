@@ -81,4 +81,17 @@ export interface Config {
   S3_SECRET_KEY: string;
   S3_BUCKET: string;
   S3_FORCE_PATH_STYLE: boolean;
+
+  MULTIPART_MAX_FILE_BYTES: number;
+
+  CONVERT_MAX_UPLOAD_CSV_BYTES: number;
+  CONVERT_MAX_UPLOAD_JSON_BYTES: number;
+  CONVERT_MAX_UPLOAD_XML_BYTES: number;
+  CONVERT_MAX_UPLOAD_YAML_BYTES: number;
+  CONVERT_TIMEOUT_MS: number;
+  CONVERT_MAX_DEPTH: number;
+  CONVERT_MAX_KEYS: number;
+  CONVERT_MAX_CSV_ROWS: number;
+  CONVERT_YAML_MAX_ALIASES: number;
+  CONVERT_WORKER_POOL_SIZE: number;
 }

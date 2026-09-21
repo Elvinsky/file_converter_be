@@ -87,4 +87,50 @@ export const configValidationSchema = Joi.object<Config>({
   S3_SECRET_KEY: Joi.string().min(8).required(),
   S3_BUCKET: Joi.string().required(),
   S3_FORCE_PATH_STYLE: Joi.boolean().default(true),
+
+  MULTIPART_MAX_FILE_BYTES: Joi.number()
+    .integer()
+    .min(1)
+    .max(104857600)
+    .default(10485760),
+
+  CONVERT_MAX_UPLOAD_CSV_BYTES: Joi.number()
+    .integer()
+    .min(1)
+    .max(Joi.ref('MULTIPART_MAX_FILE_BYTES'))
+    .default(10485760),
+  CONVERT_MAX_UPLOAD_JSON_BYTES: Joi.number()
+    .integer()
+    .min(1)
+    .max(Joi.ref('MULTIPART_MAX_FILE_BYTES'))
+    .default(10485760),
+  CONVERT_MAX_UPLOAD_XML_BYTES: Joi.number()
+    .integer()
+    .min(1)
+    .max(Joi.ref('MULTIPART_MAX_FILE_BYTES'))
+    .default(10485760),
+  CONVERT_MAX_UPLOAD_YAML_BYTES: Joi.number()
+    .integer()
+    .min(1)
+    .max(Joi.ref('MULTIPART_MAX_FILE_BYTES'))
+    .default(10485760),
+
+  CONVERT_TIMEOUT_MS: Joi.number()
+    .integer()
+    .min(1000)
+    .max(120000)
+    .default(30000),
+  CONVERT_MAX_DEPTH: Joi.number().integer().min(1).max(256).default(32),
+  CONVERT_MAX_KEYS: Joi.number().integer().min(1).max(1000000).default(10000),
+  CONVERT_MAX_CSV_ROWS: Joi.number()
+    .integer()
+    .min(1)
+    .max(1000000)
+    .default(100000),
+  CONVERT_YAML_MAX_ALIASES: Joi.number()
+    .integer()
+    .min(0)
+    .max(10000)
+    .default(100),
+  CONVERT_WORKER_POOL_SIZE: Joi.number().integer().min(1).max(16).default(2),
 });
