@@ -11,6 +11,7 @@ import { ThrottlerModule } from '@/core/throttler/throttler.module';
  * Application modules
  *
  */
+import { ConvertModule } from '@/modules/convert/modules/convert.module';
 import { FilesModule } from '@/modules/files/modules/files.module';
 import { NotificationsModule } from '@/modules/notifications/modules/notifications.module';
 import { StatusModule } from '@/modules/status/modules/status.module';
@@ -34,6 +35,7 @@ import { ScheduleModule } from '@nestjs/schedule';
      * Application modules
      *
      */
+    ConvertModule,
     FilesModule,
     NotificationsModule,
     StatusModule,

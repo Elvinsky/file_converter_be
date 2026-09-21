@@ -21,6 +21,9 @@ export const CONVERT_ERROR_CODES = {
   LIMIT_KEYS: 'LIMIT_KEYS',
   LIMIT_ROWS: 'LIMIT_ROWS',
   CONVERSION_TIMEOUT: 'CONVERSION_TIMEOUT',
+  IMAGE_NOT_IMPLEMENTED: 'IMAGE_NOT_IMPLEMENTED',
+  LIMIT_IMAGE_DIMENSION: 'LIMIT_IMAGE_DIMENSION',
+  LIMIT_IMAGE_PIXELS: 'LIMIT_IMAGE_PIXELS',
   CONVERT_INTERNAL: 'CONVERT_INTERNAL',
 } as const;
 
@@ -43,6 +46,9 @@ const DEFAULT_MESSAGES: Record<ConvertErrorCode, string> = {
   LIMIT_KEYS: 'Document exceeds maximum key count',
   LIMIT_ROWS: 'CSV exceeds maximum row count',
   CONVERSION_TIMEOUT: 'Conversion timed out',
+  IMAGE_NOT_IMPLEMENTED: 'Image conversion is not implemented',
+  LIMIT_IMAGE_DIMENSION: 'Image exceeds maximum width or height',
+  LIMIT_IMAGE_PIXELS: 'Image exceeds maximum pixel count',
   CONVERT_INTERNAL: 'Conversion failed',
 };
 

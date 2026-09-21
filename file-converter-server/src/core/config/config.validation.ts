@@ -133,4 +133,30 @@ export const configValidationSchema = Joi.object<Config>({
     .max(10000)
     .default(100),
   CONVERT_WORKER_POOL_SIZE: Joi.number().integer().min(1).max(16).default(2),
+
+  CONVERT_MAX_UPLOAD_IMAGE_BYTES: Joi.number()
+    .integer()
+    .min(1)
+    .max(Joi.ref('MULTIPART_MAX_FILE_BYTES'))
+    .default(10485760),
+  CONVERT_IMAGE_MAX_WIDTH: Joi.number()
+    .integer()
+    .min(1)
+    .max(16384)
+    .default(8192),
+  CONVERT_IMAGE_MAX_HEIGHT: Joi.number()
+    .integer()
+    .min(1)
+    .max(16384)
+    .default(8192),
+  CONVERT_IMAGE_MAX_PIXELS: Joi.number()
+    .integer()
+    .min(1)
+    .max(268435456)
+    .default(16777216),
+  CONVERT_IMAGE_QUALITY_DEFAULT: Joi.number()
+    .integer()
+    .min(1)
+    .max(100)
+    .default(80),
 });

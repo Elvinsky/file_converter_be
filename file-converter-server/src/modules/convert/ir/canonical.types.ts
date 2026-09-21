@@ -19,4 +19,13 @@ export type ValueIr = {
   value: JsonValue;
 };
 
-export type CanonicalIr = RecordsIr | ValueIr;
+/** Raster metadata only; pixel bytes stay on the job/worker, not in this tree. */
+export type ImageIr = {
+  kind: 'image';
+  format: string;
+  width: number;
+  height: number;
+  channels: number;
+};
+
+export type CanonicalIr = RecordsIr | ValueIr | ImageIr;
