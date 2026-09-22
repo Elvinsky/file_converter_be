@@ -43,13 +43,13 @@ describe('ConvertService', () => {
       filename: 'sample.json',
       mimetype: 'application/json',
       toBuffer,
-      fields: { targetFormat: { value: 'csv' } },
+      fields: { targetFormat: { value: 'xml' } },
     };
 
     await expect(service.convert(part)).resolves.toEqual({
       accepted: true,
       sourceFormat: 'json',
-      targetFormat: 'csv',
+      targetFormat: 'xml',
       bytes: 2,
       originalName: 'sample.json',
     });
@@ -140,13 +140,13 @@ describe('ConvertService', () => {
       mimetype: 'application/json',
       toBuffer: () =>
         Promise.resolve(Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), json])),
-      fields: { targetFormat: { value: 'csv' } },
+      fields: { targetFormat: { value: 'xml' } },
     };
 
     await expect(service.convert(part)).resolves.toEqual({
       accepted: true,
       sourceFormat: 'json',
-      targetFormat: 'csv',
+      targetFormat: 'xml',
       bytes: 5,
       originalName: 'sample.json',
     });
@@ -163,6 +163,40 @@ describe('ConvertService', () => {
     await expect(service.convert(part)).rejects.toMatchObject({
       response: { code: CONVERT_ERROR_CODES.FILE_EMPTY },
     });
+  });
+
+  it('converts CSV to a JSON attachment', async () => {
+    const part = {
+      filename: 'people.csv',
+      mimetype: 'text/csv',
+      toBuffer: () => Promise.resolve(Buffer.from('name,age\nAda,36\n')),
+      fields: { targetFormat: { value: 'json' } },
+    };
+
+    await expect(service.convert(part)).resolves.toEqual({
+      body: Buffer.from('[{"name":"Ada","age":"36"}]'),
+      contentType: 'application/json; charset=utf-8',
+      fileName: 'converted.json',
+    });
+  });
+
+  it('converts JSON to a CSV attachment', async () => {
+    const part = {
+      filename: 'people.json',
+      mimetype: 'application/json',
+      toBuffer: () => Promise.resolve(Buffer.from('[{"name":"Ada","age":36}]')),
+      fields: { targetFormat: { value: 'csv' } },
+    };
+
+    const result = await service.convert(part);
+
+    expect(result).toMatchObject({
+      contentType: 'text/csv; charset=utf-8',
+      fileName: 'converted.csv',
+    });
+    expect('body' in result && result.body.toString('utf8')).toBe(
+      '"name","age"\n"Ada","36"\n',
+    );
   });
 
   it('rejects invalid UTF-8 before detect', async () => {

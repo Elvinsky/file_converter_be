@@ -18,6 +18,7 @@ describe('ConvertController', () => {
     };
     const convert = jest.fn().mockResolvedValue(stub);
     const convertService = { convert } as unknown as ConvertService;
+    const reply = { header: jest.fn() };
 
     const part = {
       fieldname: 'file',
@@ -33,8 +34,11 @@ describe('ConvertController', () => {
 
     const controller = new ConvertController(convertService);
 
-    await expect(controller.convert(request)).resolves.toEqual(stub);
+    await expect(controller.convert(request, reply as never)).resolves.toEqual(
+      stub,
+    );
     expect(convert).toHaveBeenCalledWith(part);
+    expect(reply.header).not.toHaveBeenCalled();
   });
 
   it('rejects convert requests without a file part named file', async () => {
@@ -47,7 +51,9 @@ describe('ConvertController', () => {
 
     const controller = new ConvertController(convertService);
 
-    await expect(controller.convert(request)).rejects.toMatchObject({
+    await expect(
+      controller.convert(request, { header: jest.fn() } as never),
+    ).rejects.toMatchObject({
       response: { code: CONVERT_ERROR_CODES.FILE_REQUIRED },
     });
     expect(convert).not.toHaveBeenCalled();
@@ -79,7 +85,9 @@ describe('ConvertController', () => {
 
     const controller = new ConvertController(convertService);
 
-    await expect(controller.convert(request)).rejects.toMatchObject({
+    await expect(
+      controller.convert(request, { header: jest.fn() } as never),
+    ).rejects.toMatchObject({
       response: { code: CONVERT_ERROR_CODES.FILE_TOO_LARGE },
       status: 413,
     });

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -12,7 +12,9 @@ import {
   ApiUnsupportedMediaTypeResponse,
 } from '@nestjs/swagger';
 import '@fastify/multipart';
+import type { FastifyReply } from 'fastify';
 
+import { sendAttachment } from '@/core/http/http.utils';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from '@/modules/auth/types/authenticated-request';
 
@@ -25,7 +27,7 @@ import {
   mapFastifyFileTooLarge,
   throwConvertError,
 } from '../errors/convert.errors';
-import { ConvertService } from '../services/convert.service';
+import { ConvertService, isConvertedFile } from '../services/convert.service';
 
 @ApiTags('Convert')
 @UseGuards(JwtAuthGuard)
@@ -57,19 +59,11 @@ export class ConvertController {
   @ApiOperation({
     summary: 'Accept a file for conversion',
     description:
-      'Authenticated multipart intake. Field `file` plus `targetFormat` (csv, json, xml, yaml). Returns a JSON stub; conversion is not performed.',
+      'Authenticated multipart intake. Field `file` plus `targetFormat`. A pair is converted when its source parse, IR adapter, and target serialize are registered; otherwise a JSON stub is returned.',
   })
   @ApiOkResponse({
-    description: 'File was accepted; conversion has not run',
-    schema: {
-      example: {
-        accepted: true,
-        sourceFormat: 'csv',
-        targetFormat: 'json',
-        bytes: 12,
-        originalName: 'data.csv',
-      },
-    },
+    description:
+      'CSV↔JSON attachments when those codecs are registered. Other pairs: acceptance stub.',
   })
   @ApiUnauthorizedResponse({
     description: 'Access token is missing or invalid',
@@ -86,13 +80,22 @@ export class ConvertController {
     description:
       'File exceeds MULTIPART_MAX_FILE_BYTES or CONVERT_MAX_UPLOAD_<source>_BYTES',
   })
-  async convert(@Req() request: Request & AuthenticatedRequest) {
+  async convert(
+    @Req() request: Request & AuthenticatedRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
     const part = await mapFastifyFileTooLarge(() => request.file());
 
     if (!part || part.fieldname !== 'file') {
       throwConvertError(CONVERT_ERROR_CODES.FILE_REQUIRED);
     }
 
-    return this.convertService.convert(part);
+    const result = await this.convertService.convert(part);
+
+    if (!isConvertedFile(result)) {
+      return result;
+    }
+
+    return sendAttachment(reply, result);
   }
 }

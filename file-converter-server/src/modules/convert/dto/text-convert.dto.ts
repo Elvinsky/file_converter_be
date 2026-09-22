@@ -8,6 +8,28 @@ export enum TargetFormat {
   YAML = 'yaml',
 }
 
+export const TEXT_FORMAT_OUTPUT: Record<
+  TargetFormat,
+  { contentType: string; fileName: string }
+> = {
+  [TargetFormat.CSV]: {
+    contentType: 'text/csv; charset=utf-8',
+    fileName: 'converted.csv',
+  },
+  [TargetFormat.JSON]: {
+    contentType: 'application/json; charset=utf-8',
+    fileName: 'converted.json',
+  },
+  [TargetFormat.XML]: {
+    contentType: 'application/xml; charset=utf-8',
+    fileName: 'converted.xml',
+  },
+  [TargetFormat.YAML]: {
+    contentType: 'application/yaml; charset=utf-8',
+    fileName: 'converted.yaml',
+  },
+};
+
 export class TextConvertUploadDto {
   @ApiProperty({
     type: 'string',

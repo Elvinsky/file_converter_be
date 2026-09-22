@@ -3,7 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@/core/config/config.service';
 import { Config } from '@/core/config/config.types';
 
-import { TargetFormat } from '../dto/text-convert.dto';
+import { runTextConversion } from '../codecs/text-codecs';
+import { TargetFormat, TextConvertResultDto } from '../dto/text-convert.dto';
 import {
   CONVERT_ERROR_CODES,
   mapFastifyFileTooLarge,
@@ -40,6 +41,14 @@ export type ConvertAcceptedStub = {
   originalName: string;
 };
 
+export type ConvertOutcome = ConvertAcceptedStub | TextConvertResultDto;
+
+export function isConvertedFile(
+  result: ConvertOutcome,
+): result is TextConvertResultDto {
+  return 'body' in result;
+}
+
 @Injectable()
 export class ConvertService {
   constructor(
@@ -51,7 +60,7 @@ export class ConvertService {
     return getFormatsCatalog();
   }
 
-  async convert(part: IncomingConvertUpload): Promise<ConvertAcceptedStub> {
+  async convert(part: IncomingConvertUpload): Promise<ConvertOutcome> {
     const targetFormat = this.readTargetFormat(part);
     const body = await mapFastifyFileTooLarge(() => part.toBuffer());
 
@@ -65,7 +74,7 @@ export class ConvertService {
       throwConvertError(CONVERT_ERROR_CODES.FILE_EMPTY);
     }
 
-    decodeUtf8(textBytes);
+    const text = decodeUtf8(textBytes);
 
     const sourceFormat = this.formatDetector.detect({
       filename: part.filename,
@@ -81,6 +90,16 @@ export class ConvertService {
 
     if (!isPairAllowed(sourceFormat, targetFormat)) {
       throwConvertError(CONVERT_ERROR_CODES.PAIR_NOT_ALLOWED);
+    }
+
+    const converted = runTextConversion(text, sourceFormat, targetFormat, {
+      maxCsvRows: this.config.get('CONVERT_MAX_CSV_ROWS'),
+      maxDepth: this.config.get('CONVERT_MAX_DEPTH'),
+      maxKeys: this.config.get('CONVERT_MAX_KEYS'),
+    });
+
+    if (converted) {
+      return converted;
     }
 
     return {
