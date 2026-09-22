@@ -1,3 +1,4 @@
+import { FASTIFY_FILE_TOO_LARGE_CODE } from '@/core/http/http.constants';
 import { AuthenticatedRequest } from '@/modules/auth/types/authenticated-request';
 
 import { ConvertController } from '../controllers/convert.controller';
@@ -62,5 +63,26 @@ describe('ConvertController', () => {
 
     expect(controller.getFormats()).toEqual(catalog);
     expect(listFormats).toHaveBeenCalled();
+  });
+
+  it('maps Fastify request-file-too-large from request.file to 413', async () => {
+    const convert = jest.fn();
+    const convertService = { convert } as unknown as ConvertService;
+    const error = Object.assign(new Error('request file too large'), {
+      code: FASTIFY_FILE_TOO_LARGE_CODE,
+      statusCode: 413,
+    });
+    const request = {
+      user: { id: userId, email: 'user@example.com' },
+      file: jest.fn().mockRejectedValue(error),
+    } as unknown as Request & AuthenticatedRequest;
+
+    const controller = new ConvertController(convertService);
+
+    await expect(controller.convert(request)).rejects.toMatchObject({
+      response: { code: CONVERT_ERROR_CODES.FILE_TOO_LARGE },
+      status: 413,
+    });
+    expect(convert).not.toHaveBeenCalled();
   });
 });

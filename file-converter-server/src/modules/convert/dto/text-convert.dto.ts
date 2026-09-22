@@ -13,7 +13,7 @@ export class TextConvertUploadDto {
     type: 'string',
     format: 'binary',
     description:
-      'Source text file. Multipart field name must be `file`. Size must not exceed the cap for the detected source format.',
+      'Source text file. Multipart field name must be `file`. UTF-8 required; a leading BOM is stripped. Size must not exceed the cap for the detected source format.',
   })
   file: unknown;
 

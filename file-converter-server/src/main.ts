@@ -56,7 +56,7 @@ async function bootstrap() {
 
   await app.register(multipart, {
     limits: {
-      fileSize: 10 * 1024 * 1024,
+      fileSize: configService.get('MULTIPART_MAX_FILE_BYTES'),
       files: 1,
     },
   });

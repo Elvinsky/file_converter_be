@@ -6,6 +6,8 @@ import {
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
 
+import { isFastifyFileTooLarge } from '@/core/http/http.utils';
+
 export const CONVERT_ERROR_CODES = {
   FILE_REQUIRED: 'FILE_REQUIRED',
   FILE_EMPTY: 'FILE_EMPTY',
@@ -88,4 +90,18 @@ export function throwConvertError(
   message?: string,
 ): never {
   throw convertException(code, message);
+}
+
+export async function mapFastifyFileTooLarge<T>(
+  run: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (isFastifyFileTooLarge(error)) {
+      throwConvertError(CONVERT_ERROR_CODES.FILE_TOO_LARGE);
+    }
+
+    throw error;
+  }
 }

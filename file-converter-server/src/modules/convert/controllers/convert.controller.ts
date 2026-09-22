@@ -6,6 +6,7 @@ import {
   ApiCookieAuth,
   ApiOkResponse,
   ApiOperation,
+  ApiPayloadTooLargeResponse,
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnsupportedMediaTypeResponse,
@@ -21,6 +22,7 @@ import {
 } from '../dto/text-convert.dto';
 import {
   CONVERT_ERROR_CODES,
+  mapFastifyFileTooLarge,
   throwConvertError,
 } from '../errors/convert.errors';
 import { ConvertService } from '../services/convert.service';
@@ -74,14 +76,18 @@ export class ConvertController {
   })
   @ApiBadRequestResponse({
     description:
-      'File is missing, empty, targetFormat is invalid, or the conversion pair is not allowed',
+      'File is missing, empty, not UTF-8, targetFormat is invalid, or the conversion pair is not allowed',
   })
   @ApiUnsupportedMediaTypeResponse({
     description:
       'Source format is unknown or conflicts across filename, MIME, and content',
   })
+  @ApiPayloadTooLargeResponse({
+    description:
+      'File exceeds MULTIPART_MAX_FILE_BYTES or CONVERT_MAX_UPLOAD_<source>_BYTES',
+  })
   async convert(@Req() request: Request & AuthenticatedRequest) {
-    const part = await request.file();
+    const part = await mapFastifyFileTooLarge(() => request.file());
 
     if (!part || part.fieldname !== 'file') {
       throwConvertError(CONVERT_ERROR_CODES.FILE_REQUIRED);

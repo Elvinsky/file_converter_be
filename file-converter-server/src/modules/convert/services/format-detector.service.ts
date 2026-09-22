@@ -6,10 +6,10 @@ import {
   CONVERT_ERROR_CODES,
   throwConvertError,
 } from '../errors/convert.errors';
+import { stripUtf8Bom } from '../utils/utf8.util';
 import { type ConvertFormat } from './conversion-graph';
 
 const SNIFF_LIMIT = 4 * 1024;
-const UTF8_BOM = Buffer.from([0xef, 0xbb, 0xbf]);
 
 const MIME_TO_FORMAT: Record<string, ConvertFormat> = {
   'application/json': TargetFormat.JSON,
@@ -103,9 +103,7 @@ export class FormatDetectorService {
 
   private fromSniff(body: Buffer): Sniff {
     const sliced = body.subarray(0, SNIFF_LIMIT);
-    const withoutBom = sliced.subarray(0, 3).equals(UTF8_BOM)
-      ? sliced.subarray(3)
-      : sliced;
+    const withoutBom = stripUtf8Bom(sliced);
     const trimmed = withoutBom.toString('utf8').trim();
 
     if (!trimmed) {
