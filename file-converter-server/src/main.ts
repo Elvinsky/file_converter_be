@@ -14,6 +14,7 @@ import {
 
 import { AppModule } from './core/app/app.module';
 import { ConfigService } from '@/core/config/config.service';
+import { API_GLOBAL_PREFIX } from '@/core/http/http.constants';
 import { setupSwagger } from '@/core/swagger/setup-swagger';
 
 async function bootstrap() {
@@ -26,6 +27,8 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const port = configService.get('PORT');
+
+  app.setGlobalPrefix(API_GLOBAL_PREFIX);
 
   app.useGlobalPipes(
     new ValidationPipe({

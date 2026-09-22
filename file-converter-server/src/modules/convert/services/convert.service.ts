@@ -5,7 +5,11 @@ import {
   CONVERT_ERROR_CODES,
   throwConvertError,
 } from '../errors/convert.errors';
-import { isPairAllowed, toConvertFormat } from './conversion-graph';
+import {
+  getFormatsCatalog,
+  isPairAllowed,
+  toConvertFormat,
+} from './conversion-graph';
 import { FormatDetectorService } from './format-detector.service';
 
 export type IncomingConvertUpload = {
@@ -26,6 +30,10 @@ export type ConvertAcceptedStub = {
 @Injectable()
 export class ConvertService {
   constructor(private readonly formatDetector: FormatDetectorService) {}
+
+  listFormats() {
+    return getFormatsCatalog();
+  }
 
   async convert(part: IncomingConvertUpload): Promise<ConvertAcceptedStub> {
     const targetFormat = this.readTargetFormat(part);

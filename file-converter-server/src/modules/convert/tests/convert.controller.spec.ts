@@ -51,4 +51,16 @@ describe('ConvertController', () => {
     });
     expect(convert).not.toHaveBeenCalled();
   });
+
+  it('returns the formats catalog from the service', () => {
+    const catalog = [
+      { source: 'csv' as const, target: ['json', 'xml', 'yaml'] as const },
+    ];
+    const listFormats = jest.fn().mockReturnValue(catalog);
+    const convertService = { listFormats } as unknown as ConvertService;
+    const controller = new ConvertController(convertService);
+
+    expect(controller.getFormats()).toEqual(catalog);
+    expect(listFormats).toHaveBeenCalled();
+  });
 });

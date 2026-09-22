@@ -2,7 +2,7 @@
 
 NestJS backend for the file converter. HTTP kernel is **Fastify** (`@nestjs/platform-fastify`), not Express — use Fastify plugins and types (`NestFastifyApplication`, `app.register(...)`) in `src/main.ts`. Compression (`@fastify/compress`) and cookies (`@fastify/cookie`) are already registered.
 
-OpenAPI/Swagger UI is served at `/docs` (JSON spec at `/docs-json`) when `SWAGGER_ENABLED` is true (the default). Root `docker compose up` passes this through to the backend container.
+HTTP routes use the global prefix `/api` (for example `GET /api/status`, `GET /api/convert/formats`). OpenAPI/Swagger UI is served at `/docs` (JSON spec at `/docs-json`) when `SWAGGER_ENABLED` is true (the default). Root `docker compose up` passes this through to the backend container.
 
 ## Scripts
 

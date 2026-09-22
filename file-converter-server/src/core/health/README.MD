@@ -1,6 +1,6 @@
 # Health Module
 
-The Health module provides a health check endpoint at `GET /health`
+The Health module provides a health check endpoint at `GET /api/health`
 
 ## Enable / Disable
 

@@ -1,4 +1,4 @@
-import { ConvertMediaKind, TargetFormat } from '../dto/text-convert.dto';
+import { TargetFormat } from '../dto/text-convert.dto';
 
 export const GRAPH_FORMATS = [
   TargetFormat.CSV,
@@ -37,12 +37,10 @@ export function isPairAllowed(
 }
 
 export function getFormatsCatalog(): Array<{
-  kind: ConvertMediaKind;
   source: ConvertFormat;
   target: ConvertFormat[];
 }> {
   return GRAPH_FORMATS.map((source) => ({
-    kind: ConvertMediaKind.TEXT,
     source,
     target: [...TARGETS[source]],
   }));

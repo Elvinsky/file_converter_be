@@ -1,4 +1,4 @@
-import { Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -15,7 +15,10 @@ import '@fastify/multipart';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from '@/modules/auth/types/authenticated-request';
 
-import { TextConvertUploadDto } from '../dto/text-convert.dto';
+import {
+  TextConvertFormatPairDto,
+  TextConvertUploadDto,
+} from '../dto/text-convert.dto';
 import {
   CONVERT_ERROR_CODES,
   throwConvertError,
@@ -23,12 +26,30 @@ import {
 import { ConvertService } from '../services/convert.service';
 
 @ApiTags('Convert')
+@UseGuards(JwtAuthGuard)
+@ApiCookieAuth('access_token')
 @Controller('convert')
 export class ConvertController {
   constructor(private readonly convertService: ConvertService) {}
 
-  @UseGuards(JwtAuthGuard)
-  @ApiCookieAuth('access_token')
+  @Get('formats')
+  @ApiOperation({
+    summary: 'List supported conversion pairs',
+    description:
+      'Returns allowed directions as `{ source, target[] }`. Twelve pairs in total: each of csv, json, xml, yaml to the other three.',
+  })
+  @ApiOkResponse({
+    description: 'Allowed conversion pairs',
+    type: [TextConvertFormatPairDto],
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Access token is missing or invalid',
+  })
+  getFormats() {
+    return this.convertService.listFormats();
+  }
+
+  @Post()
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: TextConvertUploadDto })
   @ApiOperation({
@@ -59,7 +80,6 @@ export class ConvertController {
     description:
       'Source format is unknown or conflicts across filename, MIME, and content',
   })
-  @Post()
   async convert(@Req() request: Request & AuthenticatedRequest) {
     const part = await request.file();
 

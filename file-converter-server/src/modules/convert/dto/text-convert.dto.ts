@@ -1,11 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty } from 'class-validator';
 
-export enum ConvertMediaKind {
-  TEXT = 'text',
-  IMAGE = 'image',
-}
-
 export enum TargetFormat {
   CSV = 'csv',
   JSON = 'json',
@@ -34,13 +29,6 @@ export class TextConvertUploadDto {
 }
 
 export class TextConvertFormatPairDto {
-  @ApiProperty({
-    enum: ConvertMediaKind,
-    example: ConvertMediaKind.TEXT,
-    description: 'Always `text` for this catalog.',
-  })
-  kind: ConvertMediaKind.TEXT;
-
   @ApiProperty({
     enum: TargetFormat,
     example: TargetFormat.CSV,

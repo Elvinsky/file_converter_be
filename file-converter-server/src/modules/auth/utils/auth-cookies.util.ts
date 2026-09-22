@@ -1,6 +1,7 @@
 import { FastifyReply } from 'fastify';
 
 import { ConfigService } from '@/core/config/config.service';
+import { AUTH_REFRESH_COOKIE_PATH } from '@/core/http/http.constants';
 
 import { TokenPair } from '@/modules/jwt/jwt.types';
 
@@ -49,7 +50,7 @@ export function setAuthCookies(
     httpOnly: true,
     secure: isProduction,
     sameSite: 'strict',
-    path: '/auth/refresh',
+    path: AUTH_REFRESH_COOKIE_PATH,
     maxAge: parseDurationToSeconds(
       configService.get('JWT_REFRESH_TOKEN_EXPIRES_IN'),
     ),
@@ -58,5 +59,5 @@ export function setAuthCookies(
 
 export function clearAuthCookies(reply: FastifyReply): void {
   reply.clearCookie('access_token', { path: '/' });
-  reply.clearCookie('refresh_token', { path: '/auth/refresh' });
+  reply.clearCookie('refresh_token', { path: AUTH_REFRESH_COOKIE_PATH });
 }

@@ -46,6 +46,10 @@ export function setupSwagger(app: INestApplication, port: number): void {
       'Files',
       'Upload files to S3-compatible storage and list them. Admins see every file with publisher email; other users see only their own.',
     )
+    .addTag(
+      'Convert',
+      'Authenticated file conversion. List allowed format pairs and submit a source file with a target format.',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
