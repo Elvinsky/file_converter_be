@@ -8,14 +8,17 @@ import {
   throwConvertError,
 } from '../errors/convert.errors';
 import { adaptToTarget, asRecordsIr, asValueIr } from '../ir/adapters';
-import { CanonicalIr } from '../ir/canonical.types';
+import { CanonicalIr, JsonValue } from '../ir/canonical.types';
 import { parseCsv, serializeCsv } from './csv.codec';
 import { parseJson, serializeJson } from './json.codec';
+import { parseXml, serializeXml } from './xml.codec';
+import { parseYaml, serializeYaml } from './yaml.codec';
 
 export type TextCodecLimits = {
   maxCsvRows?: number;
   maxDepth?: number;
   maxKeys?: number;
+  maxYamlAliases?: number;
 };
 
 export type TextCodec = {
@@ -43,19 +46,36 @@ export const TEXT_CODECS: Record<TargetFormat, TextCodec> = {
   [TargetFormat.JSON]: {
     parse: (text, limits) =>
       parseJson(text, { maxDepth: limits.maxDepth, maxKeys: limits.maxKeys }),
-    serialize: (ir) => {
-      const valueIr = asValueIr(ir);
-
-      if (!valueIr) {
-        throwConvertError(CONVERT_ERROR_CODES.CONVERT_INTERNAL);
-      }
-
-      return serializeJson(valueIr.value);
-    },
+    serialize: (ir) => serializeValue(ir, serializeJson),
   },
-  [TargetFormat.XML]: {},
-  [TargetFormat.YAML]: {},
+  [TargetFormat.XML]: {
+    parse: (text, limits) =>
+      parseXml(text, { maxDepth: limits.maxDepth, maxKeys: limits.maxKeys }),
+    serialize: (ir) => serializeValue(ir, serializeXml),
+  },
+  [TargetFormat.YAML]: {
+    parse: (text, limits) =>
+      parseYaml(text, {
+        maxDepth: limits.maxDepth,
+        maxKeys: limits.maxKeys,
+        maxAliases: limits.maxYamlAliases,
+      }),
+    serialize: (ir) => serializeValue(ir, serializeYaml),
+  },
 };
+
+function serializeValue(
+  ir: CanonicalIr,
+  serialize: (value: JsonValue) => Buffer,
+): Buffer {
+  const valueIr = asValueIr(ir);
+
+  if (!valueIr) {
+    throwConvertError(CONVERT_ERROR_CODES.CONVERT_INTERNAL);
+  }
+
+  return serialize(valueIr.value);
+}
 
 export function runTextConversion(
   text: string,

@@ -4,9 +4,11 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCookieAuth,
+  ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiOperation,
   ApiPayloadTooLargeResponse,
+  ApiProduces,
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnsupportedMediaTypeResponse,
@@ -19,6 +21,8 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from '@/modules/auth/types/authenticated-request';
 
 import {
+  TEXT_CONVERT_RESPONSE_CONTENT,
+  TextConvertErrorDto,
   TextConvertFormatPairDto,
   TextConvertUploadDto,
 } from '../dto/text-convert.dto';
@@ -55,30 +59,49 @@ export class ConvertController {
 
   @Post()
   @ApiConsumes('multipart/form-data')
+  @ApiProduces(
+    'text/csv; charset=utf-8',
+    'application/json; charset=utf-8',
+    'application/xml; charset=utf-8',
+    'application/yaml; charset=utf-8',
+  )
   @ApiBody({ type: TextConvertUploadDto })
   @ApiOperation({
-    summary: 'Accept a file for conversion',
+    summary: 'Convert a text file',
     description:
-      'Authenticated multipart intake. Field `file` plus `targetFormat`. A pair is converted when its source parse, IR adapter, and target serialize are registered; otherwise a JSON stub is returned.',
+      'Authenticated multipart intake. Field `file` plus `targetFormat` (csv, json, xml, yaml). Every allowed pair returns `converted.<ext>` with `Content-Disposition: attachment`. Errors use `{ code, message }`.',
   })
   @ApiOkResponse({
     description:
-      'CSV↔JSON attachments when those codecs are registered. Other pairs: acceptance stub.',
+      'Converted attachment. Filename is `converted.csv`, `converted.json`, `converted.xml`, or `converted.yaml`.',
+    content: TEXT_CONVERT_RESPONSE_CONTENT,
+    headers: {
+      'Content-Disposition': {
+        description: 'attachment; filename="converted.<ext>"',
+        schema: { type: 'string' },
+      },
+    },
   })
   @ApiUnauthorizedResponse({
     description: 'Access token is missing or invalid',
   })
   @ApiBadRequestResponse({
     description:
-      'File is missing, empty, not UTF-8, targetFormat is invalid, or the conversion pair is not allowed',
+      'FILE_REQUIRED, FILE_EMPTY, INVALID_TARGET_FORMAT, PAIR_NOT_ALLOWED, INVALID_ENCODING, INVALID_SYNTAX, CONVERSION_AMBIGUOUS, LIMIT_DEPTH, LIMIT_KEYS, or LIMIT_ROWS',
+    type: TextConvertErrorDto,
   })
   @ApiUnsupportedMediaTypeResponse({
-    description:
-      'Source format is unknown or conflicts across filename, MIME, and content',
+    description: 'UNSUPPORTED_SOURCE_FORMAT or FORMAT_CONFLICT',
+    type: TextConvertErrorDto,
   })
   @ApiPayloadTooLargeResponse({
     description:
-      'File exceeds MULTIPART_MAX_FILE_BYTES or CONVERT_MAX_UPLOAD_<source>_BYTES',
+      'FILE_TOO_LARGE. File exceeds MULTIPART_MAX_FILE_BYTES or CONVERT_MAX_UPLOAD_<source>_BYTES',
+    type: TextConvertErrorDto,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'CONVERT_INTERNAL',
+    type: TextConvertErrorDto,
   })
   async convert(
     @Req() request: Request & AuthenticatedRequest,

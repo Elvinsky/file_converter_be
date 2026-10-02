@@ -28,9 +28,39 @@ describe('runTextConversion', () => {
     expect(result?.body.toString('utf8')).toBe('"name","age"\n"Ada","36"\n');
   });
 
-  it('returns undefined when a codec is not registered', () => {
-    expect(
-      runTextConversion('name\nAda\n', TargetFormat.CSV, TargetFormat.XML),
-    ).toBeUndefined();
+  it('converts JSON to XML through value IR', () => {
+    const result = runTextConversion(
+      '{"name":"Ada"}',
+      TargetFormat.JSON,
+      TargetFormat.XML,
+    );
+
+    expect(result?.fileName).toBe('converted.xml');
+    expect(result?.body.toString('utf8')).toBe('<root><name>Ada</name></root>');
+  });
+
+  it('converts YAML to JSON through value IR', () => {
+    const result = runTextConversion(
+      'name: Ada\n',
+      TargetFormat.YAML,
+      TargetFormat.JSON,
+    );
+
+    expect(result).toEqual({
+      body: Buffer.from('{"name":"Ada"}'),
+      contentType: 'application/json; charset=utf-8',
+      fileName: 'converted.json',
+    });
+  });
+
+  it('converts CSV to YAML through records→value', () => {
+    const result = runTextConversion(
+      'name\nAda\n',
+      TargetFormat.CSV,
+      TargetFormat.YAML,
+    );
+
+    expect(result?.fileName).toBe('converted.yaml');
+    expect(result?.body.toString('utf8')).toBe('- name: Ada\n');
   });
 });

@@ -48,7 +48,7 @@ export function setupSwagger(app: INestApplication, port: number): void {
     )
     .addTag(
       'Convert',
-      'Authenticated file conversion. List allowed format pairs and submit a source file with a target format.',
+      'Authenticated text conversion between csv, json, xml, and yaml. List allowed pairs, then submit multipart `file` and `targetFormat`. Success is a converted attachment; errors are `{ code, message }`.',
     )
     .build();
 

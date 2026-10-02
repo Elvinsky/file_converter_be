@@ -37,8 +37,8 @@ describe('ConvertService', () => {
     expect(pairCount).toBe(12);
   });
 
-  it('reads targetFormat before buffering and returns an acceptance stub', async () => {
-    const toBuffer = jest.fn().mockResolvedValue(Buffer.from('{}'));
+  it('reads targetFormat before buffering and converts JSON to XML', async () => {
+    const toBuffer = jest.fn().mockResolvedValue(Buffer.from('{"name":"Ada"}'));
     const part = {
       filename: 'sample.json',
       mimetype: 'application/json',
@@ -47,11 +47,9 @@ describe('ConvertService', () => {
     };
 
     await expect(service.convert(part)).resolves.toEqual({
-      accepted: true,
-      sourceFormat: 'json',
-      targetFormat: 'xml',
-      bytes: 2,
-      originalName: 'sample.json',
+      body: Buffer.from('<root><name>Ada</name></root>'),
+      contentType: 'application/xml; charset=utf-8',
+      fileName: 'converted.xml',
     });
     expect(toBuffer).toHaveBeenCalled();
   });
@@ -134,7 +132,7 @@ describe('ConvertService', () => {
   });
 
   it('accepts a UTF-8 BOM and strips it before detect', async () => {
-    const json = Buffer.from('{}');
+    const json = Buffer.from('{"name":"Ada"}');
     const part = {
       filename: 'sample.json',
       mimetype: 'application/json',
@@ -144,11 +142,9 @@ describe('ConvertService', () => {
     };
 
     await expect(service.convert(part)).resolves.toEqual({
-      accepted: true,
-      sourceFormat: 'json',
-      targetFormat: 'xml',
-      bytes: 5,
-      originalName: 'sample.json',
+      body: Buffer.from('<root><name>Ada</name></root>'),
+      contentType: 'application/xml; charset=utf-8',
+      fileName: 'converted.xml',
     });
   });
 

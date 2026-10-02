@@ -19,12 +19,12 @@ import {
 } from './conversion-graph';
 import { FormatDetectorService } from './format-detector.service';
 
-const MAX_UPLOAD_BYTES_BY_SOURCE: Record<ConvertFormat, keyof Config> = {
+const MAX_UPLOAD_BYTES_BY_SOURCE = {
   [TargetFormat.CSV]: 'CONVERT_MAX_UPLOAD_CSV_BYTES',
   [TargetFormat.JSON]: 'CONVERT_MAX_UPLOAD_JSON_BYTES',
   [TargetFormat.XML]: 'CONVERT_MAX_UPLOAD_XML_BYTES',
   [TargetFormat.YAML]: 'CONVERT_MAX_UPLOAD_YAML_BYTES',
-};
+} as const satisfies Record<ConvertFormat, keyof Config>;
 
 export type IncomingConvertUpload = {
   filename: string;
@@ -96,6 +96,7 @@ export class ConvertService {
       maxCsvRows: this.config.get('CONVERT_MAX_CSV_ROWS'),
       maxDepth: this.config.get('CONVERT_MAX_DEPTH'),
       maxKeys: this.config.get('CONVERT_MAX_KEYS'),
+      maxYamlAliases: this.config.get('CONVERT_YAML_MAX_ALIASES'),
     });
 
     if (converted) {

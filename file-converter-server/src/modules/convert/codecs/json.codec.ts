@@ -24,7 +24,7 @@ export function parseJson(
   }
 
   const stats = { keys: 0 };
-  const value = sanitizeJson(parsed, 0, options, stats);
+  const value = sanitizeJsonValue(parsed, 0, options, stats);
 
   return { kind: 'value', value };
 }
@@ -33,7 +33,7 @@ export function serializeJson(value: JsonValue): Buffer {
   return Buffer.from(JSON.stringify(value), 'utf8');
 }
 
-function sanitizeJson(
+export function sanitizeJsonValue(
   value: unknown,
   depth: number,
   options: ParseJsonOptions,
@@ -53,7 +53,9 @@ function sanitizeJson(
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => sanitizeJson(item, depth + 1, options, stats));
+    return value.map((item) =>
+      sanitizeJsonValue(item, depth + 1, options, stats),
+    );
   }
 
   if (typeof value === 'object') {
@@ -69,7 +71,7 @@ function sanitizeJson(
         throwConvertError(CONVERT_ERROR_CODES.LIMIT_KEYS);
       }
 
-      object[key] = sanitizeJson(nested, depth + 1, options, stats);
+      object[key] = sanitizeJsonValue(nested, depth + 1, options, stats);
     }
 
     return object;
