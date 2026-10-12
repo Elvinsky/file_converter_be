@@ -13,6 +13,7 @@ import { ThrottlerModule } from '@/core/throttler/throttler.module';
  *
  */
 import { ConvertModule } from '@/modules/convert/modules/convert.module';
+import { TransformationsModule } from '@/modules/transformations/modules/transformations.module';
 import { FilesModule } from '@/modules/files/modules/files.module';
 import { NotificationsModule } from '@/modules/notifications/modules/notifications.module';
 import { StatusModule } from '@/modules/status/modules/status.module';
@@ -38,6 +39,7 @@ import { ScheduleModule } from '@nestjs/schedule';
      *
      */
     ConvertModule,
+    TransformationsModule,
     FilesModule,
     NotificationsModule,
     StatusModule,

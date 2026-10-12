@@ -26,11 +26,7 @@ import {
   TextConvertFormatPairDto,
   TextConvertUploadDto,
 } from '../dto/text-convert.dto';
-import {
-  CONVERT_ERROR_CODES,
-  mapFastifyFileTooLarge,
-  throwConvertError,
-} from '../errors/convert.errors';
+import { mapFastifyFileTooLarge } from '../errors/convert.errors';
 import { ConvertService, isConvertedFile } from '../services/convert.service';
 
 @ApiTags('Convert')
@@ -69,7 +65,7 @@ export class ConvertController {
   @ApiOperation({
     summary: 'Convert a text file',
     description:
-      'Authenticated multipart intake. Field `file` plus `targetFormat` (csv, json, xml, yaml). Every allowed pair returns `converted.<ext>` with `Content-Disposition: attachment`. Errors use `{ code, message }`.',
+      'Authenticated multipart intake. Field `file` plus `targetFormat` (csv, json, xml, yaml). Optional `save=true` stores the result without delaying this download. CSV is a header table of text cells. Nested values become dotted CSV columns; a list of plain values becomes a `value` column; an empty list or a single plain value cannot become CSV. XML attributes are kept as `@_name`, text as `#text`, output is wrapped in `<root>`, and lists become repeated `<item>` elements. Every allowed pair returns `converted.<ext>`. Errors use `{ code, message }`.',
   })
   @ApiOkResponse({
     description:
@@ -87,7 +83,7 @@ export class ConvertController {
   })
   @ApiBadRequestResponse({
     description:
-      'FILE_REQUIRED, FILE_EMPTY, INVALID_TARGET_FORMAT, PAIR_NOT_ALLOWED, INVALID_ENCODING, INVALID_SYNTAX, CONVERSION_AMBIGUOUS, LIMIT_DEPTH, LIMIT_KEYS, or LIMIT_ROWS',
+      'FILE_REQUIRED, FILE_EMPTY, INVALID_TARGET_FORMAT, PAIR_NOT_ALLOWED, INVALID_ENCODING, INVALID_SYNTAX, CONVERSION_AMBIGUOUS, INVALID_SAVE, LIMIT_DEPTH, LIMIT_KEYS, or LIMIT_ROWS',
     type: TextConvertErrorDto,
   })
   @ApiUnsupportedMediaTypeResponse({
@@ -108,12 +104,10 @@ export class ConvertController {
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const part = await mapFastifyFileTooLarge(() => request.file());
-
-    if (!part || part.fieldname !== 'file') {
-      throwConvertError(CONVERT_ERROR_CODES.FILE_REQUIRED);
-    }
-
-    const result = await this.convertService.convert(part);
+    const upload = part && part.fieldname === 'file' ? part : null;
+    const result = await this.convertService.convert(upload, {
+      userId: request.user.id,
+    });
 
     if (!isConvertedFile(result)) {
       return result;

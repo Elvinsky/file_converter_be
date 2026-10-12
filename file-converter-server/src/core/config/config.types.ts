@@ -96,8 +96,23 @@ export interface Config {
   CONVERT_WORKER_POOL_SIZE: number;
 
   CONVERT_MAX_UPLOAD_IMAGE_BYTES: number;
+  CONVERT_MAX_UPLOAD_PNG_BYTES: number;
+  CONVERT_MAX_UPLOAD_JPEG_BYTES: number;
+  CONVERT_MAX_UPLOAD_SVG_BYTES: number;
   CONVERT_IMAGE_MAX_WIDTH: number;
   CONVERT_IMAGE_MAX_HEIGHT: number;
   CONVERT_IMAGE_MAX_PIXELS: number;
   CONVERT_IMAGE_QUALITY_DEFAULT: number;
+
+  /**
+   * How long transformation history rows and saved results are kept.
+   */
+  TRANSFORMATION_RETENTION_DAYS: number;
+
+  /**
+   * Rate limits for transformation history reads.
+   */
+  HISTORY_RATE_TTL_MS: number;
+  HISTORY_RATE_LIMIT: number;
+  HISTORY_ADMIN_RATE_LIMIT: number;
 }

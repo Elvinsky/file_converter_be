@@ -48,7 +48,15 @@ export function setupSwagger(app: INestApplication, port: number): void {
     )
     .addTag(
       'Convert',
-      'Authenticated text conversion between csv, json, xml, and yaml. List allowed pairs, then submit multipart `file` and `targetFormat`. Success is a converted attachment; errors are `{ code, message }`.',
+      'Authenticated text conversion between csv, json, xml, and yaml. CSV is a header table; nested fields become dotted columns; XML attributes use @_name and text uses #text. Optional save stores the result. Errors are `{ code, message }`.',
+    )
+    .addTag(
+      'Images',
+      'Authenticated image conversion: png→jpeg, jpeg→png, svg→png, svg→jpeg. PNG and JPEG are never converted to SVG. SVG scripts and external resources are rejected.',
+    )
+    .addTag(
+      'Transformations',
+      'History of file and image conversions. Users see their own rows. Administrators with transformations-history + read can open one user’s history and download a saved result.',
     )
     .build();
 

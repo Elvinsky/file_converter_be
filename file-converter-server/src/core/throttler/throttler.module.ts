@@ -15,8 +15,19 @@ import { ConfigService } from '@/core/config/config.service';
 
         return [
           {
+            name: 'default',
             ttl,
             limit,
+          },
+          {
+            name: 'history',
+            ttl: Number(config.get('HISTORY_RATE_TTL_MS')),
+            limit: Number(config.get('HISTORY_RATE_LIMIT')),
+          },
+          {
+            name: 'historyAdmin',
+            ttl: Number(config.get('HISTORY_RATE_TTL_MS')),
+            limit: Number(config.get('HISTORY_ADMIN_RATE_LIMIT')),
           },
         ];
       },

@@ -139,6 +139,21 @@ export const configValidationSchema = Joi.object<Config>({
     .min(1)
     .max(Joi.ref('MULTIPART_MAX_FILE_BYTES'))
     .default(10485760),
+  CONVERT_MAX_UPLOAD_PNG_BYTES: Joi.number()
+    .integer()
+    .min(1)
+    .max(Joi.ref('MULTIPART_MAX_FILE_BYTES'))
+    .default(10485760),
+  CONVERT_MAX_UPLOAD_JPEG_BYTES: Joi.number()
+    .integer()
+    .min(1)
+    .max(Joi.ref('MULTIPART_MAX_FILE_BYTES'))
+    .default(10485760),
+  CONVERT_MAX_UPLOAD_SVG_BYTES: Joi.number()
+    .integer()
+    .min(1)
+    .max(Joi.ref('MULTIPART_MAX_FILE_BYTES'))
+    .default(10485760),
   CONVERT_IMAGE_MAX_WIDTH: Joi.number()
     .integer()
     .min(1)
@@ -159,4 +174,13 @@ export const configValidationSchema = Joi.object<Config>({
     .min(1)
     .max(100)
     .default(80),
+
+  TRANSFORMATION_RETENTION_DAYS: Joi.number()
+    .integer()
+    .min(1)
+    .max(3650)
+    .default(90),
+  HISTORY_RATE_TTL_MS: Joi.number().integer().min(1000).default(60000),
+  HISTORY_RATE_LIMIT: Joi.number().integer().min(1).default(30),
+  HISTORY_ADMIN_RATE_LIMIT: Joi.number().integer().min(1).default(10),
 });

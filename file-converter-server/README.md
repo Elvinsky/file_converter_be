@@ -75,6 +75,26 @@ nest generate controller <name>
 nest generate service <name>
 ```
 
+## Conversion rules
+
+Text conversion accepts CSV, JSON, XML, and YAML in every direction except a format to itself.
+
+- CSV is a table with a header row. Each row becomes an object, and every cell stays text.
+- When writing CSV, nested fields become dotted column names. A list of plain values becomes one column named `value`. An empty list or a single plain value cannot become CSV.
+- XML attributes are kept as `@_name`. Text content is kept as `#text`. Output XML is wrapped in `<root>`. Lists become repeated `<item>` elements.
+- Files must be UTF-8. A leading BOM is accepted and removed. Empty files are rejected.
+- Each source format has its own upload size limit in application configuration.
+
+Image conversion accepts only PNG to JPEG, JPEG to PNG, and SVG to PNG or JPEG. PNG and JPEG are never turned into SVG.
+
+- JPEG output is opaque. Transparent pixels are placed on white, or on the SVG background color when that color was requested.
+- PNG output from JPEG keeps the picture as a PNG. SVG rasterization uses the requested background (default `#ffffff`).
+- SVG files that contain scripts or external resources are rejected.
+- A picture that would expand beyond the configured pixel limit is rejected.
+- Width and height limits for SVG output are set in application configuration, separately from the PNG, JPEG, and SVG upload size limits.
+
+Every signed-in conversion, including failures, is stored in transformation history. File and image contents are not stored in that history and are not written to logs. `save=true` keeps the result in the existing MinIO bucket until the history retention period ends (default 90 days). If saving fails, the converted file is still returned and the history row has nothing to download. A user downloads only their own saved files. An administrator with permission `transformations-history` + `read` can list and download one user’s history.
+
 ## Code Style
 
 - Use `@` aliases for imports (e.g., `@config/config.service`)

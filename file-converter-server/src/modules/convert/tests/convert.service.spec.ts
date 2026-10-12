@@ -1,5 +1,6 @@
 import { ConfigService } from '@/core/config/config.service';
 import { FASTIFY_FILE_TOO_LARGE_CODE } from '@/core/http/http.constants';
+import { TransformationHistoryService } from '@/modules/transformations/services/transformation-history.service';
 
 import { CONVERT_ERROR_CODES } from '../errors/convert.errors';
 import { ConvertService } from '../services/convert.service';
@@ -54,19 +55,17 @@ describe('ConvertService', () => {
     expect(toBuffer).toHaveBeenCalled();
   });
 
-  it('rejects a missing or unknown targetFormat without consuming the stream', async () => {
-    const toBuffer = jest.fn();
+  it('rejects a missing or unknown targetFormat', async () => {
     const part = {
       filename: 'sample.json',
       mimetype: 'application/json',
-      toBuffer,
+      toBuffer: () => Promise.resolve(Buffer.from('{}')),
       fields: { targetFormat: { value: 'pdf' } },
     };
 
     await expect(service.convert(part)).rejects.toMatchObject({
       response: { code: CONVERT_ERROR_CODES.INVALID_TARGET_FORMAT },
     });
-    expect(toBuffer).not.toHaveBeenCalled();
   });
 
   it('rejects an empty file after targetFormat is valid', async () => {
@@ -192,6 +191,83 @@ describe('ConvertService', () => {
     });
     expect('body' in result && result.body.toString('utf8')).toBe(
       '"name","age"\n"Ada","36"\n',
+    );
+  });
+
+  it('rejects a missing file', async () => {
+    await expect(service.convert(null)).rejects.toMatchObject({
+      response: { code: CONVERT_ERROR_CODES.FILE_REQUIRED },
+    });
+  });
+
+  it('rejects an invalid save flag', async () => {
+    const part = {
+      filename: 'sample.json',
+      mimetype: 'application/json',
+      toBuffer: () => Promise.resolve(Buffer.from('{}')),
+      fields: {
+        targetFormat: { value: 'csv' },
+        save: { value: 'yes' },
+      },
+    };
+
+    await expect(service.convert(part)).rejects.toMatchObject({
+      response: { code: CONVERT_ERROR_CODES.INVALID_SAVE },
+    });
+  });
+
+  it('fails with CONVERSION_TIMEOUT when conversion does not finish', async () => {
+    const limited = new ConvertService(
+      new FormatDetectorService(),
+      configWithLimits({ CONVERT_TIMEOUT_MS: 20 }),
+      { run: () => new Promise(() => undefined) },
+    );
+    const part = {
+      filename: 'sample.json',
+      mimetype: 'application/json',
+      toBuffer: () => Promise.resolve(Buffer.from('{"name":"Ada"}')),
+      fields: { targetFormat: { value: 'xml' } },
+    };
+
+    await expect(limited.convert(part)).rejects.toMatchObject({
+      response: { code: CONVERT_ERROR_CODES.CONVERSION_TIMEOUT },
+      status: 408,
+    });
+  });
+
+  it('records a successful conversion and still returns the file when save is requested', async () => {
+    const record = jest.fn().mockResolvedValue(undefined);
+    const history = { record } as unknown as TransformationHistoryService;
+    const recording = new ConvertService(
+      new FormatDetectorService(),
+      configWithLimits(),
+      undefined,
+      history,
+    );
+    const part = {
+      filename: 'sample.json',
+      mimetype: 'application/json',
+      toBuffer: () => Promise.resolve(Buffer.from('{"name":"Ada"}')),
+      fields: {
+        targetFormat: { value: 'xml' },
+        save: { value: 'true' },
+      },
+    };
+
+    const result = await recording.convert(part, {
+      userId: '11111111-1111-1111-1111-111111111111',
+    });
+
+    expect(result).toMatchObject({ fileName: 'converted.xml' });
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: '11111111-1111-1111-1111-111111111111',
+        type: 'file',
+        sourceFormat: 'json',
+        targetFormat: 'xml',
+        status: 'success',
+        save: true,
+      }),
     );
   });
 

@@ -3,6 +3,7 @@ import {
   HttpException,
   InternalServerErrorException,
   PayloadTooLargeException,
+  RequestTimeoutException,
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
 
@@ -26,6 +27,10 @@ export const CONVERT_ERROR_CODES = {
   IMAGE_NOT_IMPLEMENTED: 'IMAGE_NOT_IMPLEMENTED',
   LIMIT_IMAGE_DIMENSION: 'LIMIT_IMAGE_DIMENSION',
   LIMIT_IMAGE_PIXELS: 'LIMIT_IMAGE_PIXELS',
+  INVALID_SAVE: 'INVALID_SAVE',
+  INVALID_OPTIONS: 'INVALID_OPTIONS',
+  INVALID_IMAGE: 'INVALID_IMAGE',
+  UNSAFE_SVG: 'UNSAFE_SVG',
   CONVERT_INTERNAL: 'CONVERT_INTERNAL',
 } as const;
 
@@ -51,6 +56,10 @@ const DEFAULT_MESSAGES: Record<ConvertErrorCode, string> = {
   IMAGE_NOT_IMPLEMENTED: 'Image conversion is not implemented',
   LIMIT_IMAGE_DIMENSION: 'Image exceeds maximum width or height',
   LIMIT_IMAGE_PIXELS: 'Image exceeds maximum pixel count',
+  INVALID_SAVE: 'save must be true or false',
+  INVALID_OPTIONS: 'Image options are invalid',
+  INVALID_IMAGE: 'Image could not be read',
+  UNSAFE_SVG: 'SVG contains unsafe content',
   CONVERT_INTERNAL: 'Conversion failed',
 };
 
@@ -80,9 +89,32 @@ export function convertException(
       return new UnsupportedMediaTypeException(body);
     case CONVERT_ERROR_CODES.CONVERT_INTERNAL:
       return new InternalServerErrorException(body);
+    case CONVERT_ERROR_CODES.CONVERSION_TIMEOUT:
+      return new RequestTimeoutException(body);
     default:
       return new BadRequestException(body);
   }
+}
+
+export function readConvertErrorCode(error: unknown): string {
+  if (error instanceof HttpException) {
+    const response = error.getResponse();
+
+    if (
+      typeof response === 'object' &&
+      response !== null &&
+      'code' in response &&
+      typeof response.code === 'string'
+    ) {
+      return response.code;
+    }
+  }
+
+  return CONVERT_ERROR_CODES.CONVERT_INTERNAL;
+}
+
+export function isConvertErrorCode(code: string): code is ConvertErrorCode {
+  return Object.values(CONVERT_ERROR_CODES).includes(code as ConvertErrorCode);
 }
 
 export function throwConvertError(

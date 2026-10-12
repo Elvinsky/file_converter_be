@@ -37,12 +37,15 @@ describe('ConvertController', () => {
     await expect(controller.convert(request, reply as never)).resolves.toEqual(
       stub,
     );
-    expect(convert).toHaveBeenCalledWith(part);
+    expect(convert).toHaveBeenCalledWith(part, { userId });
     expect(reply.header).not.toHaveBeenCalled();
   });
 
-  it('rejects convert requests without a file part named file', async () => {
-    const convert = jest.fn();
+  it('passes a missing file to the service as null', async () => {
+    const error = Object.assign(new Error('File is required'), {
+      response: { code: CONVERT_ERROR_CODES.FILE_REQUIRED },
+    });
+    const convert = jest.fn().mockRejectedValue(error);
     const convertService = { convert } as unknown as ConvertService;
     const request = {
       user: { id: userId, email: 'user@example.com' },
@@ -53,10 +56,8 @@ describe('ConvertController', () => {
 
     await expect(
       controller.convert(request, { header: jest.fn() } as never),
-    ).rejects.toMatchObject({
-      response: { code: CONVERT_ERROR_CODES.FILE_REQUIRED },
-    });
-    expect(convert).not.toHaveBeenCalled();
+    ).rejects.toBe(error);
+    expect(convert).toHaveBeenCalledWith(null, { userId });
   });
 
   it('returns the formats catalog from the service', () => {

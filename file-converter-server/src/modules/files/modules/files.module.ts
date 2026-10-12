@@ -1,5 +1,10 @@
 import { Module } from '@nestjs/common';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ConfigModule } from '@/core/config/config.module';
@@ -48,11 +53,38 @@ import type { ObjectStorageClient } from '../storage.types';
               }),
             );
           },
+          async getObject({ bucket, key }) {
+            const output = await client.send(
+              new GetObjectCommand({
+                Bucket: bucket,
+                Key: key,
+              }),
+            );
+
+            if (!output.Body) {
+              throw Object.assign(new Error('Stored object is empty'), {
+                name: 'NoSuchKey',
+              });
+            }
+
+            const bytes = await output.Body.transformToByteArray();
+
+            return Buffer.from(bytes);
+          },
+          async deleteObject({ bucket, key }) {
+            await client.send(
+              new DeleteObjectCommand({
+                Bucket: bucket,
+                Key: key,
+              }),
+            );
+          },
         };
       },
     },
     StorageService,
     FilesService,
   ],
+  exports: [StorageService],
 })
 export class FilesModule {}

@@ -1,29 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import {
-  IsBoolean,
-  IsEnum,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  Max,
-  Min,
-} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+
+import { CONVERT_ERROR_CODES } from '../errors/convert.errors';
 
 export enum ImageFormat {
   PNG = 'png',
   JPEG = 'jpeg',
-  WEBP = 'webp',
-  GIF = 'gif',
   SVG = 'svg',
-}
-
-export enum ImageFit {
-  COVER = 'cover',
-  CONTAIN = 'contain',
-  FILL = 'fill',
-  INSIDE = 'inside',
-  OUTSIDE = 'outside',
 }
 
 export class ImageConvertUploadDto {
@@ -31,119 +14,81 @@ export class ImageConvertUploadDto {
     type: 'string',
     format: 'binary',
     description:
-      'Source image. Multipart field name must be `file`. Image conversion is reserved.',
+      'Source image. Multipart field name must be `file`. PNG, JPEG, or SVG.',
   })
   file: unknown;
 
   @ApiProperty({
     enum: ImageFormat,
-    example: ImageFormat.PNG,
-    description: 'Output image format (reserved).',
+    example: ImageFormat.JPEG,
+    description:
+      'Output format. Allowed pairs: png→jpeg, jpeg→png, svg→png, svg→jpeg. png/jpeg→svg is never supported.',
   })
   @IsEnum(ImageFormat)
   @IsNotEmpty()
   targetFormat: ImageFormat;
 
-  @ApiProperty({
-    required: false,
-    minimum: 1,
-    maximum: 16384,
-    description: 'Target width in pixels.',
+  @ApiPropertyOptional({
+    type: String,
+    description:
+      'Optional JSON object: `{ "quality"?: 1-100, "width"?: number, "height"?: number, "background"?: "#rrggbb" }`. Flat fields of the same names are also accepted. `quality` applies to JPEG output. `width`, `height`, and `background` apply when an SVG becomes a picture. Background defaults to `#ffffff`.',
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(16384)
-  width?: number;
+  @IsString()
+  options?: string;
 
-  @ApiProperty({
-    required: false,
-    minimum: 1,
-    maximum: 16384,
-    description: 'Target height in pixels.',
+  @ApiPropertyOptional({
+    description:
+      'Keep the converted file in storage. Defaults to false. Accepts true, false, "true", or "false".',
+    example: 'false',
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(16384)
-  height?: number;
-
-  @ApiProperty({
-    required: false,
-    minimum: 1,
-    maximum: 100,
-    description: 'Encoder quality (jpeg/webp).',
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  quality?: number;
-
-  @ApiProperty({
-    enum: ImageFit,
-    required: false,
-    description: 'Resize fit when width/height are set.',
-  })
-  @IsOptional()
-  @IsEnum(ImageFit)
-  fit?: ImageFit;
-
-  @ApiProperty({
-    required: false,
-    description: 'Drop EXIF and similar metadata.',
-  })
-  @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  stripMetadata?: boolean;
+  @IsString()
+  save?: string;
 }
 
 export class ImageConvertFormatPairDto {
   @ApiProperty({
-    example: 'image',
-    description: 'Always `image` for this catalog.',
-  })
-  kind: 'image';
-
-  @ApiProperty({
     enum: ImageFormat,
     example: ImageFormat.PNG,
-    description: 'Source format.',
   })
   source: ImageFormat;
 
   @ApiProperty({
-    enum: ImageFormat,
+    enum: [ImageFormat.PNG, ImageFormat.JPEG],
     isArray: true,
-    example: [ImageFormat.JPEG, ImageFormat.WEBP],
-    description: 'Allowed conversion targets for this source.',
+    example: [ImageFormat.JPEG],
   })
-  target: ImageFormat[];
+  target: Array<'png' | 'jpeg'>;
 }
 
-export type ImageConvertOptionsDto = {
-  width?: number;
-  height?: number;
-  quality?: number;
-  fit?: ImageFit;
-  stripMetadata?: boolean;
-};
+export const IMAGE_CONVERT_ERROR_CODES = [
+  CONVERT_ERROR_CODES.FILE_REQUIRED,
+  CONVERT_ERROR_CODES.FILE_EMPTY,
+  CONVERT_ERROR_CODES.INVALID_TARGET_FORMAT,
+  CONVERT_ERROR_CODES.PAIR_NOT_ALLOWED,
+  CONVERT_ERROR_CODES.INVALID_IMAGE,
+  CONVERT_ERROR_CODES.UNSAFE_SVG,
+  CONVERT_ERROR_CODES.INVALID_OPTIONS,
+  CONVERT_ERROR_CODES.INVALID_SAVE,
+  CONVERT_ERROR_CODES.LIMIT_IMAGE_DIMENSION,
+  CONVERT_ERROR_CODES.LIMIT_IMAGE_PIXELS,
+  CONVERT_ERROR_CODES.FILE_TOO_LARGE,
+  CONVERT_ERROR_CODES.UNSUPPORTED_SOURCE_FORMAT,
+  CONVERT_ERROR_CODES.FORMAT_CONFLICT,
+  CONVERT_ERROR_CODES.CONVERSION_TIMEOUT,
+  CONVERT_ERROR_CODES.CONVERT_INTERNAL,
+] as const;
 
-export type ImageConvertJobDto = {
-  userId: string;
-  originalName: string;
-  mimeType: string;
-  targetFormat: ImageFormat;
-  body: Buffer;
-  image?: ImageConvertOptionsDto;
-};
+export class ImageConvertErrorDto {
+  @ApiProperty({ enum: IMAGE_CONVERT_ERROR_CODES })
+  code: (typeof IMAGE_CONVERT_ERROR_CODES)[number];
 
-export type ImageConvertResultDto = {
-  body: Buffer;
-  contentType: string;
-  fileName: string;
+  @ApiProperty({ example: 'Image could not be read' })
+  message: string;
+}
+
+export const IMAGE_CONVERT_RESPONSE_CONTENT = {
+  'image/png': { schema: { type: 'string', format: 'binary' } },
+  'image/jpeg': { schema: { type: 'string', format: 'binary' } },
 };

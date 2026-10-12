@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 import { CONVERT_ERROR_CODES } from '../errors/convert.errors';
 
@@ -50,6 +50,15 @@ export class TextConvertUploadDto {
   @IsEnum(TargetFormat)
   @IsNotEmpty()
   targetFormat: TargetFormat;
+
+  @ApiPropertyOptional({
+    description:
+      'Keep the converted file in storage until history retention expires. Defaults to false. Accepts true, false, "true", or "false".',
+    example: 'false',
+  })
+  @IsOptional()
+  @IsString()
+  save?: string;
 }
 
 export class TextConvertFormatPairDto {
@@ -98,6 +107,8 @@ export const TEXT_CONVERT_ERROR_CODES = [
   CONVERT_ERROR_CODES.FILE_TOO_LARGE,
   CONVERT_ERROR_CODES.UNSUPPORTED_SOURCE_FORMAT,
   CONVERT_ERROR_CODES.FORMAT_CONFLICT,
+  CONVERT_ERROR_CODES.INVALID_SAVE,
+  CONVERT_ERROR_CODES.CONVERSION_TIMEOUT,
   CONVERT_ERROR_CODES.CONVERT_INTERNAL,
 ] as const;
 

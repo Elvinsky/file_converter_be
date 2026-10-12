@@ -7,6 +7,7 @@ export const RBAC_RESOURCES = {
   MY_FILES: 'my-files',
   ME: 'me',
   PERMISSIONS: 'permissions',
+  TRANSFORMATIONS_HISTORY: 'transformations-history',
 } as const;
 
 export const RBAC_ACTIONS = {

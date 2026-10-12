@@ -5,8 +5,15 @@ export type PutObjectParams = {
   contentType?: string;
 };
 
+export type ObjectKeyParams = {
+  bucket: string;
+  key: string;
+};
+
 export interface ObjectStorageClient {
   putObject(params: PutObjectParams): Promise<void>;
+  getObject(params: ObjectKeyParams): Promise<Buffer>;
+  deleteObject(params: ObjectKeyParams): Promise<void>;
 }
 
 export type StoreObjectParams = {
