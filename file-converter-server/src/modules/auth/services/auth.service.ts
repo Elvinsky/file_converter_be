@@ -74,7 +74,10 @@ export class AuthService {
 
     return {
       user: this.toAuthUser(user),
-      tokens: this.jwtService.createTokenPair(this.toAuthUser(user)),
+      tokens: this.jwtService.createTokenPair(
+        this.toAuthUser(user),
+        user.tokenVersion,
+      ),
     };
   }
 
@@ -82,14 +85,33 @@ export class AuthService {
     const payload = this.jwtService.verifyRefreshToken(refreshToken);
     const user = await this.usersService.findUserById(payload.sub);
 
-    if (!user?.isActive) {
+    if (!user?.isActive || user.tokenVersion !== payload.ver) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
     return this.jwtService.refreshTokenPair(
       refreshToken,
       this.toAuthUser(user),
+      user.tokenVersion,
     );
+  }
+
+  async logout(accessToken?: string, refreshToken?: string): Promise<void> {
+    try {
+      const userId = accessToken
+        ? this.jwtService.verifyAccessToken(accessToken).sub
+        : refreshToken
+          ? this.jwtService.verifyRefreshToken(refreshToken).sub
+          : undefined;
+
+      if (!userId) {
+        return;
+      }
+
+      await this.usersService.incrementTokenVersion(userId);
+    } catch {
+      return;
+    }
   }
 
   async verifyOTP(verifyOtpDto: VerifyOtpDto) {

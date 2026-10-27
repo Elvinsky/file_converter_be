@@ -1,3 +1,6 @@
+import { readFile, rm } from 'node:fs/promises';
+import { Readable } from 'node:stream';
+
 import { ConfigService } from '@/core/config/config.service';
 import { FASTIFY_FILE_TOO_LARGE_CODE } from '@/core/http/http.constants';
 import { TransformationHistoryService } from '@/modules/transformations/services/transformation-history.service';
@@ -14,6 +17,35 @@ function configWithLimits(
   return {
     get: (key: string) => limits[key] ?? DEFAULT_UPLOAD_LIMIT,
   } as ConfigService;
+}
+
+function upload(
+  body: Buffer,
+  filename: string,
+  mimetype: string,
+  fields: Record<string, { value: string }>,
+  onRead?: () => void,
+) {
+  return {
+    filename,
+    mimetype,
+    fields,
+    file: new Readable({
+      read() {
+        onRead?.();
+        this.push(body);
+        this.push(null);
+      },
+    }),
+  };
+}
+
+async function readOutput(result: { outputPath: string }): Promise<string> {
+  try {
+    return await readFile(result.outputPath, 'utf8');
+  } finally {
+    await rm(result.outputPath, { force: true });
+  }
 }
 
 describe('ConvertService', () => {
@@ -38,30 +70,70 @@ describe('ConvertService', () => {
     expect(pairCount).toBe(12);
   });
 
-  it('reads targetFormat before buffering and converts JSON to XML', async () => {
-    const toBuffer = jest.fn().mockResolvedValue(Buffer.from('{"name":"Ada"}'));
-    const part = {
-      filename: 'sample.json',
-      mimetype: 'application/json',
-      toBuffer,
-      fields: { targetFormat: { value: 'xml' } },
-    };
+  it('spools the upload and passes a file path to the worker', async () => {
+    const run = jest.fn(
+      async (job: { sourcePath: string; kind: string; text?: string }) => {
+        const text = await readFile(job.sourcePath, 'utf8');
 
-    await expect(service.convert(part)).resolves.toEqual({
-      body: Buffer.from('<root><name>Ada</name></root>'),
+        expect(text).toBe('{"name":"Ada"}');
+        expect(job.kind).toBe('text');
+        expect(job.text).toBeUndefined();
+
+        return {
+          outputPath: job.sourcePath,
+          size: text.length,
+          contentType: 'application/xml; charset=utf-8',
+          fileName: 'converted.xml',
+        };
+      },
+    );
+    const pooled = new ConvertService(
+      new FormatDetectorService(),
+      configWithLimits(),
+      { run },
+    );
+    const fields: Record<string, { value: string }> = {};
+    const result = await pooled.convert(
+      upload(
+        Buffer.from('{"name":"Ada"}'),
+        'sample.json',
+        'application/json',
+        fields,
+        () => {
+          fields.targetFormat = { value: 'xml' };
+        },
+      ),
+    );
+
+    expect(result).toMatchObject({
       contentType: 'application/xml; charset=utf-8',
       fileName: 'converted.xml',
     });
-    expect(toBuffer).toHaveBeenCalled();
+    expect(run).toHaveBeenCalledWith(
+      expect.objectContaining({ sourcePath: expect.any(String) as string }),
+    );
+  });
+
+  it('converts JSON to XML from the spooled file', async () => {
+    const result = await service.convert(
+      upload(Buffer.from('{"name":"Ada"}'), 'sample.json', 'application/json', {
+        targetFormat: { value: 'xml' },
+      }),
+    );
+
+    expect(result).toMatchObject({
+      contentType: 'application/xml; charset=utf-8',
+      fileName: 'converted.xml',
+    });
+    await expect(readOutput(result as { outputPath: string })).resolves.toBe(
+      '<root><name>Ada</name></root>',
+    );
   });
 
   it('rejects a missing or unknown targetFormat', async () => {
-    const part = {
-      filename: 'sample.json',
-      mimetype: 'application/json',
-      toBuffer: () => Promise.resolve(Buffer.from('{}')),
-      fields: { targetFormat: { value: 'pdf' } },
-    };
+    const part = upload(Buffer.from('{}'), 'sample.json', 'application/json', {
+      targetFormat: { value: 'pdf' },
+    });
 
     await expect(service.convert(part)).rejects.toMatchObject({
       response: { code: CONVERT_ERROR_CODES.INVALID_TARGET_FORMAT },
@@ -69,12 +141,9 @@ describe('ConvertService', () => {
   });
 
   it('rejects an empty file after targetFormat is valid', async () => {
-    const part = {
-      filename: 'empty.json',
-      mimetype: 'application/json',
-      toBuffer: () => Promise.resolve(Buffer.alloc(0)),
-      fields: { targetFormat: { value: 'csv' } },
-    };
+    const part = upload(Buffer.alloc(0), 'empty.json', 'application/json', {
+      targetFormat: { value: 'csv' },
+    });
 
     await expect(service.convert(part)).rejects.toMatchObject({
       response: { code: CONVERT_ERROR_CODES.FILE_EMPTY },
@@ -82,12 +151,9 @@ describe('ConvertService', () => {
   });
 
   it('rejects converting a format to itself', async () => {
-    const part = {
-      filename: 'sample.json',
-      mimetype: 'application/json',
-      toBuffer: () => Promise.resolve(Buffer.from('{}')),
-      fields: { targetFormat: { value: 'json' } },
-    };
+    const part = upload(Buffer.from('{}'), 'sample.json', 'application/json', {
+      targetFormat: { value: 'json' },
+    });
 
     await expect(service.convert(part)).rejects.toMatchObject({
       response: { code: CONVERT_ERROR_CODES.PAIR_NOT_ALLOWED },
@@ -99,12 +165,9 @@ describe('ConvertService', () => {
       new FormatDetectorService(),
       configWithLimits({ CONVERT_MAX_UPLOAD_JSON_BYTES: 1 }),
     );
-    const part = {
-      filename: 'sample.json',
-      mimetype: 'application/json',
-      toBuffer: () => Promise.resolve(Buffer.from('{}')),
-      fields: { targetFormat: { value: 'csv' } },
-    };
+    const part = upload(Buffer.from('{}'), 'sample.json', 'application/json', {
+      targetFormat: { value: 'csv' },
+    });
 
     await expect(limited.convert(part)).rejects.toMatchObject({
       response: { code: CONVERT_ERROR_CODES.FILE_TOO_LARGE },
@@ -112,7 +175,7 @@ describe('ConvertService', () => {
     });
   });
 
-  it('maps Fastify request-file-too-large from toBuffer to 413', async () => {
+  it('maps Fastify request-file-too-large from the upload stream to 413', async () => {
     const error = Object.assign(new Error('request file too large'), {
       code: FASTIFY_FILE_TOO_LARGE_CODE,
       statusCode: 413,
@@ -120,8 +183,12 @@ describe('ConvertService', () => {
     const part = {
       filename: 'sample.json',
       mimetype: 'application/json',
-      toBuffer: () => Promise.reject(error),
       fields: { targetFormat: { value: 'csv' } },
+      file: new Readable({
+        read() {
+          this.destroy(error);
+        },
+      }),
     };
 
     await expect(service.convert(part)).rejects.toMatchObject({
@@ -132,28 +199,31 @@ describe('ConvertService', () => {
 
   it('accepts a UTF-8 BOM and strips it before detect', async () => {
     const json = Buffer.from('{"name":"Ada"}');
-    const part = {
-      filename: 'sample.json',
-      mimetype: 'application/json',
-      toBuffer: () =>
-        Promise.resolve(Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), json])),
-      fields: { targetFormat: { value: 'xml' } },
-    };
+    const result = await service.convert(
+      upload(
+        Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), json]),
+        'sample.json',
+        'application/json',
+        { targetFormat: { value: 'xml' } },
+      ),
+    );
 
-    await expect(service.convert(part)).resolves.toEqual({
-      body: Buffer.from('<root><name>Ada</name></root>'),
+    expect(result).toMatchObject({
       contentType: 'application/xml; charset=utf-8',
       fileName: 'converted.xml',
     });
+    await expect(readOutput(result as { outputPath: string })).resolves.toBe(
+      '<root><name>Ada</name></root>',
+    );
   });
 
   it('rejects a BOM-only file as empty', async () => {
-    const part = {
-      filename: 'empty.json',
-      mimetype: 'application/json',
-      toBuffer: () => Promise.resolve(Buffer.from([0xef, 0xbb, 0xbf])),
-      fields: { targetFormat: { value: 'csv' } },
-    };
+    const part = upload(
+      Buffer.from([0xef, 0xbb, 0xbf]),
+      'empty.json',
+      'application/json',
+      { targetFormat: { value: 'csv' } },
+    );
 
     await expect(service.convert(part)).rejects.toMatchObject({
       response: { code: CONVERT_ERROR_CODES.FILE_EMPTY },
@@ -161,35 +231,36 @@ describe('ConvertService', () => {
   });
 
   it('converts CSV to a JSON attachment', async () => {
-    const part = {
-      filename: 'people.csv',
-      mimetype: 'text/csv',
-      toBuffer: () => Promise.resolve(Buffer.from('name,age\nAda,36\n')),
-      fields: { targetFormat: { value: 'json' } },
-    };
+    const result = await service.convert(
+      upload(Buffer.from('name,age\nAda,36\n'), 'people.csv', 'text/csv', {
+        targetFormat: { value: 'json' },
+      }),
+    );
 
-    await expect(service.convert(part)).resolves.toEqual({
-      body: Buffer.from('[{"name":"Ada","age":"36"}]'),
+    expect(result).toMatchObject({
       contentType: 'application/json; charset=utf-8',
       fileName: 'converted.json',
     });
+    await expect(readOutput(result as { outputPath: string })).resolves.toBe(
+      '[{"name":"Ada","age":"36"}]',
+    );
   });
 
   it('converts JSON to a CSV attachment', async () => {
-    const part = {
-      filename: 'people.json',
-      mimetype: 'application/json',
-      toBuffer: () => Promise.resolve(Buffer.from('[{"name":"Ada","age":36}]')),
-      fields: { targetFormat: { value: 'csv' } },
-    };
-
-    const result = await service.convert(part);
+    const result = await service.convert(
+      upload(
+        Buffer.from('[{"name":"Ada","age":36}]'),
+        'people.json',
+        'application/json',
+        { targetFormat: { value: 'csv' } },
+      ),
+    );
 
     expect(result).toMatchObject({
       contentType: 'text/csv; charset=utf-8',
       fileName: 'converted.csv',
     });
-    expect('body' in result && result.body.toString('utf8')).toBe(
+    await expect(readOutput(result as { outputPath: string })).resolves.toBe(
       '"name","age"\n"Ada","36"\n',
     );
   });
@@ -201,15 +272,10 @@ describe('ConvertService', () => {
   });
 
   it('rejects an invalid save flag', async () => {
-    const part = {
-      filename: 'sample.json',
-      mimetype: 'application/json',
-      toBuffer: () => Promise.resolve(Buffer.from('{}')),
-      fields: {
-        targetFormat: { value: 'csv' },
-        save: { value: 'yes' },
-      },
-    };
+    const part = upload(Buffer.from('{}'), 'sample.json', 'application/json', {
+      targetFormat: { value: 'csv' },
+      save: { value: 'yes' },
+    });
 
     await expect(service.convert(part)).rejects.toMatchObject({
       response: { code: CONVERT_ERROR_CODES.INVALID_SAVE },
@@ -222,12 +288,12 @@ describe('ConvertService', () => {
       configWithLimits({ CONVERT_TIMEOUT_MS: 20 }),
       { run: () => new Promise(() => undefined) },
     );
-    const part = {
-      filename: 'sample.json',
-      mimetype: 'application/json',
-      toBuffer: () => Promise.resolve(Buffer.from('{"name":"Ada"}')),
-      fields: { targetFormat: { value: 'xml' } },
-    };
+    const part = upload(
+      Buffer.from('{"name":"Ada"}'),
+      'sample.json',
+      'application/json',
+      { targetFormat: { value: 'xml' } },
+    );
 
     await expect(limited.convert(part)).rejects.toMatchObject({
       response: { code: CONVERT_ERROR_CODES.CONVERSION_TIMEOUT },
@@ -236,7 +302,11 @@ describe('ConvertService', () => {
   });
 
   it('records a successful conversion and still returns the file when save is requested', async () => {
-    const record = jest.fn().mockResolvedValue(undefined);
+    const record = jest.fn(async (input: { bodyPath?: string }) => {
+      if (input.bodyPath) {
+        await rm(input.bodyPath, { force: true });
+      }
+    });
     const history = { record } as unknown as TransformationHistoryService;
     const recording = new ConvertService(
       new FormatDetectorService(),
@@ -244,19 +314,14 @@ describe('ConvertService', () => {
       undefined,
       history,
     );
-    const part = {
-      filename: 'sample.json',
-      mimetype: 'application/json',
-      toBuffer: () => Promise.resolve(Buffer.from('{"name":"Ada"}')),
-      fields: {
+
+    const result = await recording.convert(
+      upload(Buffer.from('{"name":"Ada"}'), 'sample.json', 'application/json', {
         targetFormat: { value: 'xml' },
         save: { value: 'true' },
-      },
-    };
-
-    const result = await recording.convert(part, {
-      userId: '11111111-1111-1111-1111-111111111111',
-    });
+      }),
+      { userId: '11111111-1111-1111-1111-111111111111' },
+    );
 
     expect(result).toMatchObject({ fileName: 'converted.xml' });
     expect(record).toHaveBeenCalledWith(
@@ -267,17 +332,19 @@ describe('ConvertService', () => {
         targetFormat: 'xml',
         status: 'success',
         save: true,
+        bodyPath: expect.any(String) as string,
       }),
     );
+    await rm((result as { outputPath: string }).outputPath, { force: true });
   });
 
   it('rejects invalid UTF-8 before detect', async () => {
-    const part = {
-      filename: 'sample.json',
-      mimetype: 'application/json',
-      toBuffer: () => Promise.resolve(Buffer.from([0xff, 0xfe, 0x00])),
-      fields: { targetFormat: { value: 'csv' } },
-    };
+    const part = upload(
+      Buffer.from([0xff, 0xfe, 0x00]),
+      'sample.json',
+      'application/json',
+      { targetFormat: { value: 'csv' } },
+    );
 
     await expect(service.convert(part)).rejects.toMatchObject({
       response: { code: CONVERT_ERROR_CODES.INVALID_ENCODING },

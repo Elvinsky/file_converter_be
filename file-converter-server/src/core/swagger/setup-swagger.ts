@@ -1,7 +1,7 @@
 import { INestApplication, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-const SWAGGER_PATH = 'docs';
+export const SWAGGER_PATH = 'docs';
 
 export function setupSwagger(app: INestApplication, port: number): void {
   const config = new DocumentBuilder()
@@ -52,7 +52,7 @@ export function setupSwagger(app: INestApplication, port: number): void {
     )
     .addTag(
       'Images',
-      'Authenticated image conversion: png→jpeg, jpeg→png, svg→png, svg→jpeg. PNG and JPEG are never converted to SVG. SVG scripts and external resources are rejected.',
+      'Authenticated image conversion: png→jpeg, jpeg→png, svg→png, svg→jpeg. PNG and JPEG are never converted to SVG. SVG script and active content are stripped before rasterizing.',
     )
     .addTag(
       'Transformations',

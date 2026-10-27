@@ -5,6 +5,7 @@ import {
   Logger,
   Optional,
 } from '@nestjs/common';
+import { copyFile, rm } from 'node:fs/promises';
 
 import { ConfigService } from '@/core/config/config.service';
 import { Config } from '@/core/config/config.types';
@@ -25,9 +26,10 @@ import {
   parseImageTargetFormat,
 } from '../images/image-graph';
 import { runImageConversion } from '../images/run-image-conversion';
-import { ImageConversionResult } from '../images/run-image-conversion';
 import { parseSaveFlag, readMultipartValue } from '../utils/multipart.util';
+import { readFilePrefix, spoolStream } from '../utils/spool.util';
 import { withTimeout } from '../utils/timeout.util';
+import { ConvertedFile } from '../workers/conversion-job';
 import {
   CONVERSION_RUNNER,
   type ConversionRunner,
@@ -40,6 +42,8 @@ const MAX_UPLOAD_BYTES_BY_SOURCE = {
   jpeg: 'CONVERT_MAX_UPLOAD_JPEG_BYTES',
   svg: 'CONVERT_MAX_UPLOAD_SVG_BYTES',
 } as const satisfies Record<ImageSourceFormat, keyof Config>;
+
+const SNIFF_PREFIX_BYTES = 4 * 1024;
 
 const BACKGROUND = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
@@ -70,7 +74,7 @@ export class ImageConvertService {
   async convert(
     part: IncomingConvertUpload | null,
     context: { userId?: string } = {},
-  ): Promise<ImageConversionResult> {
+  ): Promise<ConvertedFile> {
     const started = Date.now();
     const trace = {
       sourceFormat: 'unknown',
@@ -78,26 +82,31 @@ export class ImageConvertService {
       fileSize: 0,
       save: false,
     };
+    let sourcePath: string | undefined;
+    let outputPath: string | undefined;
 
     try {
       if (!part) {
         throwConvertError(CONVERT_ERROR_CODES.FILE_REQUIRED);
       }
 
-      const body = await mapFastifyFileTooLarge(() => part.toBuffer());
-      trace.fileSize = body.length;
+      const spooled = await mapFastifyFileTooLarge(() =>
+        spoolStream(part.file),
+      );
+      sourcePath = spooled.path;
+      trace.fileSize = spooled.size;
       const targetToken = this.readTarget(part);
       trace.targetFormat = targetToken;
       trace.save = this.readSave(part);
 
-      if (body.length === 0) {
+      if (spooled.size === 0) {
         throwConvertError(CONVERT_ERROR_CODES.FILE_EMPTY);
       }
 
       const sourceFormat = detectImageFormat({
         filename: part.filename,
         mimeType: part.mimetype,
-        body,
+        body: await readFilePrefix(sourcePath, SNIFF_PREFIX_BYTES),
       });
       trace.sourceFormat = sourceFormat;
 
@@ -105,7 +114,7 @@ export class ImageConvertService {
         MAX_UPLOAD_BYTES_BY_SOURCE[sourceFormat],
       );
 
-      if (body.length > maxBytes) {
+      if (spooled.size > maxBytes) {
         throwConvertError(CONVERT_ERROR_CODES.FILE_TOO_LARGE);
       }
 
@@ -118,7 +127,7 @@ export class ImageConvertService {
         options.quality ?? this.config.get('CONVERT_IMAGE_QUALITY_DEFAULT');
       const converted = await withTimeout(
         this.execute({
-          body,
+          sourcePath,
           source: sourceFormat,
           target: targetToken,
           width: options.width,
@@ -132,22 +141,36 @@ export class ImageConvertService {
         this.timeoutMs(),
       );
 
+      outputPath = converted.outputPath;
+      const savePath = trace.save ? `${converted.outputPath}.save` : undefined;
+
+      if (savePath) {
+        await copyFile(converted.outputPath, savePath);
+      }
+
       await this.remember({
         userId: context.userId ?? '',
         type: 'image',
         sourceFormat,
         targetFormat: targetToken,
         status: 'success',
-        fileSize: body.length,
+        fileSize: spooled.size,
         durationMs: Date.now() - started,
         save: trace.save,
-        body: converted.body,
+        bodyPath: savePath,
+        storedBytes: converted.size,
         contentType: converted.contentType,
         fileName: converted.fileName,
       });
 
+      outputPath = undefined;
+
       return converted;
     } catch (error) {
+      if (outputPath) {
+        await rm(outputPath, { force: true });
+      }
+
       await this.remember({
         userId: context.userId ?? '',
         type: 'image',
@@ -160,11 +183,15 @@ export class ImageConvertService {
         save: false,
       });
       throw error;
+    } finally {
+      if (sourcePath) {
+        await rm(sourcePath, { force: true });
+      }
     }
   }
 
-  private async execute(input: {
-    body: Buffer;
+  private execute(input: {
+    sourcePath: string;
     source: ImageSourceFormat;
     target: ImageTargetFormat;
     width?: number;
@@ -174,7 +201,7 @@ export class ImageConvertService {
     maxWidth: number;
     maxHeight: number;
     maxPixels: number;
-  }): Promise<ImageConversionResult> {
+  }): Promise<ConvertedFile> {
     if (this.runner) {
       return this.runner.run({ kind: 'image', ...input });
     }
@@ -190,12 +217,20 @@ export class ImageConvertService {
     input: Parameters<TransformationHistoryService['record']>[0],
   ): Promise<void> {
     if (!this.history || !input.userId) {
+      if (input.bodyPath) {
+        await rm(input.bodyPath, { force: true });
+      }
+
       return;
     }
 
     try {
       await this.history.record(input);
     } catch {
+      if (input.bodyPath) {
+        await rm(input.bodyPath, { force: true });
+      }
+
       this.logger.error('Failed to record transformation history');
     }
   }

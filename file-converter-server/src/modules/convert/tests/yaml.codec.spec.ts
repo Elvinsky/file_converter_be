@@ -36,6 +36,28 @@ describe('parseYaml', () => {
       });
     }
   });
+
+  it('rejects documents deeper than maxDepth', () => {
+    try {
+      parseYaml('a:\n  b:\n    c: 1\n', { maxDepth: 1 });
+      throw new Error('expected LIMIT_DEPTH');
+    } catch (error) {
+      expect(error).toMatchObject({
+        response: { code: CONVERT_ERROR_CODES.LIMIT_DEPTH },
+      });
+    }
+  });
+
+  it('rejects documents above maxNodes', () => {
+    try {
+      parseYaml('a: 1\nb: 2\nc: 3\n', { maxNodes: 2 });
+      throw new Error('expected LIMIT_NODES');
+    } catch (error) {
+      expect(error).toMatchObject({
+        response: { code: CONVERT_ERROR_CODES.LIMIT_NODES },
+      });
+    }
+  });
 });
 
 describe('serializeYaml', () => {

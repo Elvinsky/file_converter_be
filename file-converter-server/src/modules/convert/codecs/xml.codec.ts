@@ -1,3 +1,4 @@
+import { HttpException } from '@nestjs/common';
 import { XMLBuilder, XMLParser, XMLValidator } from 'fast-xml-parser';
 
 import {
@@ -40,7 +41,18 @@ export function parseXml(text: string, options: ParseXmlOptions = {}): ValueIr {
 
   try {
     parsed = parser.parse(text) as unknown;
-  } catch {
+  } catch (error) {
+    if (error instanceof HttpException) {
+      throw error;
+    }
+
+    if (
+      error instanceof Error &&
+      error.message.includes('Maximum nested tags exceeded')
+    ) {
+      throwConvertError(CONVERT_ERROR_CODES.LIMIT_DEPTH);
+    }
+
     throwConvertError(CONVERT_ERROR_CODES.INVALID_SYNTAX);
   }
 
@@ -48,7 +60,7 @@ export function parseXml(text: string, options: ParseXmlOptions = {}): ValueIr {
     throwConvertError(CONVERT_ERROR_CODES.INVALID_SYNTAX);
   }
 
-  const stats = { keys: 0 };
+  const stats = { keys: 0, nodes: 0 };
   const value = sanitizeJsonValue(parsed, 0, options, stats);
 
   return { kind: 'value', value };

@@ -1,3 +1,4 @@
+import { readFile, rm, stat } from 'node:fs/promises';
 import { HttpException } from '@nestjs/common';
 import sharp from 'sharp';
 
@@ -6,9 +7,11 @@ import {
   throwConvertError,
 } from '../errors/convert.errors';
 import { decodeUtf8 } from '../utils/utf8.util';
+import { ConvertedFile } from '../workers/conversion-job';
+import { allocateOutputPath } from '../utils/spool.util';
 
 import { ImageSourceFormat, ImageTargetFormat } from './image-graph';
-import { assertSafeSvg } from './svg-safety';
+import { sanitizeSvg } from './svg-safety';
 
 export const DEFAULT_SVG_RASTER_SIZE = 512;
 
@@ -21,7 +24,7 @@ const OUTPUT: Record<
 };
 
 export type ImageConversionInput = {
-  body: Buffer;
+  sourcePath: string;
   source: ImageSourceFormat;
   target: ImageTargetFormat;
   width?: number;
@@ -33,15 +36,9 @@ export type ImageConversionInput = {
   maxPixels: number;
 };
 
-export type ImageConversionResult = {
-  body: Buffer;
-  contentType: string;
-  fileName: string;
-};
-
 export async function runImageConversion(
   input: ImageConversionInput,
-): Promise<ImageConversionResult> {
+): Promise<ConvertedFile> {
   try {
     if (input.source === 'svg') {
       return await convertSvg(input);
@@ -53,13 +50,8 @@ export async function runImageConversion(
   }
 }
 
-async function convertSvg(
-  input: ImageConversionInput,
-): Promise<ImageConversionResult> {
-  const svg = decodeUtf8(input.body);
-
-  assertSafeSvg(svg);
-
+async function convertSvg(input: ImageConversionInput): Promise<ConvertedFile> {
+  const svg = sanitizeSvg(decodeUtf8(await readFile(input.sourcePath)));
   const size = resolveSvgSize(svg, input);
   const pipeline = sharp(Buffer.from(svg), {
     animated: false,
@@ -70,20 +62,18 @@ async function convertSvg(
     .resize(size.width, size.height, { fit: 'fill' })
     .flatten({ background: input.background });
 
-  const body = await encode(pipeline, input);
-
-  return { body, ...OUTPUT[input.target] };
+  return writeImage(pipeline, input);
 }
 
 async function convertRaster(
   input: ImageConversionInput,
-): Promise<ImageConversionResult> {
+): Promise<ConvertedFile> {
   const options = {
     animated: false as const,
     failOn: 'error' as const,
     limitInputPixels: input.maxPixels,
   };
-  const meta = await sharp(input.body, options).metadata();
+  const meta = await sharp(input.sourcePath, options).metadata();
   const width = meta.width ?? 0;
   const height = meta.height ?? 0;
 
@@ -95,26 +85,39 @@ async function convertRaster(
     throwConvertError(CONVERT_ERROR_CODES.LIMIT_IMAGE_PIXELS);
   }
 
-  let pipeline = sharp(input.body, options);
+  let pipeline = sharp(input.sourcePath, options);
 
   if (input.target === 'jpeg') {
     pipeline = pipeline.flatten({ background: '#ffffff' });
   }
 
-  const body = await encode(pipeline, input);
-
-  return { body, ...OUTPUT[input.target] };
+  return writeImage(pipeline, input);
 }
 
-function encode(
+async function writeImage(
   pipeline: sharp.Sharp,
   input: ImageConversionInput,
-): Promise<Buffer> {
-  if (input.target === 'jpeg') {
-    return pipeline.jpeg({ quality: input.quality }).toBuffer();
-  }
+): Promise<ConvertedFile> {
+  const outputPath = await allocateOutputPath();
 
-  return pipeline.png().toBuffer();
+  try {
+    if (input.target === 'jpeg') {
+      await pipeline.jpeg({ quality: input.quality }).toFile(outputPath);
+    } else {
+      await pipeline.png().toFile(outputPath);
+    }
+
+    const info = await stat(outputPath);
+
+    return {
+      outputPath,
+      size: info.size,
+      ...OUTPUT[input.target],
+    };
+  } catch (error) {
+    await rm(outputPath, { force: true });
+    throw error;
+  }
 }
 
 function resolveSvgSize(

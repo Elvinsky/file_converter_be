@@ -1,3 +1,5 @@
+import { createReadStream } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import {
   ForbiddenException,
   Injectable,
@@ -28,6 +30,8 @@ export type RecordTransformationInput = {
   errorCode?: string;
   save: boolean;
   body?: Buffer;
+  bodyPath?: string;
+  storedBytes?: number;
   contentType?: string;
   fileName?: string;
 };
@@ -85,11 +89,16 @@ export class TransformationHistoryService {
     if (
       input.status === 'success' &&
       input.save &&
-      input.body &&
       input.fileName &&
-      input.contentType
+      input.contentType &&
+      (input.body || input.bodyPath)
     ) {
       this.startSave(row, input);
+      return;
+    }
+
+    if (input.bodyPath) {
+      await rm(input.bodyPath, { force: true });
     }
   }
 
@@ -281,10 +290,14 @@ export class TransformationHistoryService {
     const started = Date.now();
     const key = `transformations/${input.userId}/${row.id}/${input.fileName}`;
 
+    const bytes = input.storedBytes ?? input.body?.length ?? null;
+
     try {
       await this.storage.putObject({
         key,
-        body: input.body as Buffer,
+        body: input.bodyPath
+          ? createReadStream(input.bodyPath)
+          : (input.body as Buffer),
         contentType: input.contentType,
       });
       await this.history.update(row.id, {
@@ -299,7 +312,7 @@ export class TransformationHistoryService {
         transformationId: row.id,
         fileId: key,
         result: 'success',
-        fileSize: input.body?.length ?? null,
+        fileSize: bytes,
         durationMs: Date.now() - started,
       });
     } catch (error) {
@@ -310,11 +323,15 @@ export class TransformationHistoryService {
         transformationId: row.id,
         fileId: null,
         result: 'error',
-        fileSize: input.body?.length ?? null,
+        fileSize: bytes,
         durationMs: Date.now() - started,
         detail: error instanceof Error ? error.name : 'storage_error',
       });
       throw error;
+    } finally {
+      if (input.bodyPath) {
+        await rm(input.bodyPath, { force: true });
+      }
     }
   }
 

@@ -3,7 +3,7 @@ import { ImageSourceFormat, ImageTargetFormat } from '../images/image-graph';
 
 export type TextConversionJob = {
   kind: 'text';
-  text: string;
+  sourcePath: string;
   source: string;
   target: string;
   limits: TextCodecLimits;
@@ -11,7 +11,7 @@ export type TextConversionJob = {
 
 export type ImageConversionJob = {
   kind: 'image';
-  body: Buffer;
+  sourcePath: string;
   source: ImageSourceFormat;
   target: ImageTargetFormat;
   width?: number;
@@ -25,8 +25,11 @@ export type ImageConversionJob = {
 
 export type ConversionJob = TextConversionJob | ImageConversionJob;
 
-export type ConversionResult = {
-  body: Buffer;
+export type ConvertedFile = {
+  outputPath: string;
+  size: number;
   contentType: string;
   fileName: string;
 };
+
+export type ConversionResult = ConvertedFile;

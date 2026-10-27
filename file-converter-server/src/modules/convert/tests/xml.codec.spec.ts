@@ -38,6 +38,32 @@ describe('parseXml', () => {
       });
     }
   });
+
+  it('rejects nesting above maxDepth', () => {
+    const xml = `<r>${'<n>'.repeat(8)}1${'</n>'.repeat(8)}</r>`;
+
+    try {
+      parseXml(xml, { maxDepth: 2 });
+      throw new Error('expected LIMIT_DEPTH');
+    } catch (error) {
+      expect(error).toMatchObject({
+        response: { code: CONVERT_ERROR_CODES.LIMIT_DEPTH },
+      });
+    }
+  });
+
+  it('rejects documents above maxNodes', () => {
+    try {
+      parseXml('<root><a>1</a><b>2</b><c>3</c><d>4</d></root>', {
+        maxNodes: 2,
+      });
+      throw new Error('expected LIMIT_NODES');
+    } catch (error) {
+      expect(error).toMatchObject({
+        response: { code: CONVERT_ERROR_CODES.LIMIT_NODES },
+      });
+    }
+  });
 });
 
 describe('serializeXml', () => {

@@ -1,7 +1,11 @@
+import type { Readable } from 'node:stream';
+
+export type StoredBody = Buffer | Readable;
+
 export type PutObjectParams = {
   bucket: string;
   key: string;
-  body: Buffer;
+  body: StoredBody;
   contentType?: string;
 };
 
@@ -18,7 +22,7 @@ export interface ObjectStorageClient {
 
 export type StoreObjectParams = {
   key: string;
-  body: Buffer;
+  body: StoredBody;
   contentType?: string;
 };
 

@@ -122,6 +122,7 @@ export const configValidationSchema = Joi.object<Config>({
     .default(30000),
   CONVERT_MAX_DEPTH: Joi.number().integer().min(1).max(256).default(32),
   CONVERT_MAX_KEYS: Joi.number().integer().min(1).max(1000000).default(10000),
+  CONVERT_MAX_NODES: Joi.number().integer().min(1).max(1000000).default(100000),
   CONVERT_MAX_CSV_ROWS: Joi.number()
     .integer()
     .min(1)

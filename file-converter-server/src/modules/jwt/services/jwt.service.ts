@@ -14,28 +14,33 @@ import {
 export class JwtService {
   constructor(private readonly configService: ConfigService) {}
 
-  createTokenPair(user: AuthUserPayload): TokenPair {
+  createTokenPair(user: AuthUserPayload, tokenVersion: number): TokenPair {
     return {
-      accessToken: this.generateAccessToken(user),
-      refreshToken: this.generateRefreshToken(user.id),
+      accessToken: this.generateAccessToken(user, tokenVersion),
+      refreshToken: this.generateRefreshToken(user.id, tokenVersion),
     };
   }
 
-  refreshTokenPair(refreshToken: string, user: AuthUserPayload): TokenPair {
+  refreshTokenPair(
+    refreshToken: string,
+    user: AuthUserPayload,
+    tokenVersion: number,
+  ): TokenPair {
     const payload = this.verifyRefreshToken(refreshToken);
 
-    if (payload.sub !== user.id) {
+    if (payload.sub !== user.id || payload.ver !== tokenVersion) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    return this.createTokenPair(user);
+    return this.createTokenPair(user, tokenVersion);
   }
 
-  generateAccessToken(user: AuthUserPayload): string {
+  generateAccessToken(user: AuthUserPayload, tokenVersion: number): string {
     const payload: AccessTokenPayload = {
       sub: user.id,
       email: user.email,
       type: 'access',
+      ver: tokenVersion,
     };
 
     return jwt.sign(payload, this.getSecret(), {
@@ -43,10 +48,11 @@ export class JwtService {
     });
   }
 
-  generateRefreshToken(userId: string): string {
+  generateRefreshToken(userId: string, tokenVersion: number): string {
     const payload: RefreshTokenPayload = {
       sub: userId,
       type: 'refresh',
+      ver: tokenVersion,
     };
 
     return jwt.sign(payload, this.getSecret(), {
@@ -78,12 +84,14 @@ export class JwtService {
     type?: string;
     sub?: string;
     email?: string;
+    ver?: number;
   } {
     try {
       return jwt.verify(token, this.getSecret()) as jwt.JwtPayload & {
         type?: string;
         sub?: string;
         email?: string;
+        ver?: number;
       };
     } catch {
       throw new UnauthorizedException('Invalid or expired token');

@@ -30,7 +30,7 @@ export function parseYaml(
     throwConvertError(CONVERT_ERROR_CODES.INVALID_SYNTAX);
   }
 
-  const stats = { keys: 0 };
+  const stats = { keys: 0, nodes: 0 };
   const value = sanitizeJsonValue(toJsonValue(parsed), 0, options, stats);
 
   return { kind: 'value', value };

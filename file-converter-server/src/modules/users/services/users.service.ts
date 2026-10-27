@@ -51,8 +51,32 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id } });
   }
 
-  async getUsers() {
-    return this.usersRepository.find();
+  async getUsers(page = 1, limit = 20) {
+    const [rows, total] = await this.usersRepository.findAndCount({
+      select: {
+        id: true,
+        email: true,
+        isActive: true,
+      },
+      order: { email: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      items: rows.map((user) => ({
+        id: user.id,
+        email: user.email,
+        isActive: user.isActive,
+      })),
+      page,
+      limit,
+      total,
+    };
+  }
+
+  async incrementTokenVersion(id: string): Promise<void> {
+    await this.usersRepository.increment({ id }, 'tokenVersion', 1);
   }
 
   async getUserById(id: string) {

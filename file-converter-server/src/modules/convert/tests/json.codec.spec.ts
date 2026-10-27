@@ -34,4 +34,26 @@ describe('parseJson', () => {
       value: { name: 'Ada' },
     });
   });
+
+  it('rejects documents deeper than maxDepth', () => {
+    try {
+      parseJson('{"a":{"b":{"c":1}}}', { maxDepth: 1 });
+      throw new Error('expected LIMIT_DEPTH');
+    } catch (error) {
+      expect(error).toMatchObject({
+        response: { code: CONVERT_ERROR_CODES.LIMIT_DEPTH },
+      });
+    }
+  });
+
+  it('rejects documents with more nodes than maxNodes', () => {
+    try {
+      parseJson('{"a":1,"b":2}', { maxNodes: 2 });
+      throw new Error('expected LIMIT_NODES');
+    } catch (error) {
+      expect(error).toMatchObject({
+        response: { code: CONVERT_ERROR_CODES.LIMIT_NODES },
+      });
+    }
+  });
 });

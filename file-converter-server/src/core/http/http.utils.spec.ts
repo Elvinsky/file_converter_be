@@ -1,3 +1,8 @@
+import { type ReadStream } from 'node:fs';
+import { access, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { FASTIFY_FILE_TOO_LARGE_CODE } from './http.constants';
 import { isFastifyFileTooLarge, sendAttachment } from './http.utils';
 
@@ -36,6 +41,27 @@ describe('http.utils', () => {
         'Content-Length',
         String(body.length),
       );
+    });
+
+    it('streams a spooled file and removes it when the stream closes', async () => {
+      const outputPath = join(tmpdir(), `attachment-${Date.now()}.txt`);
+
+      await writeFile(outputPath, 'abc');
+
+      const header = jest.fn().mockReturnThis();
+      const stream = sendAttachment({ header } as never, {
+        outputPath,
+        size: 3,
+        contentType: 'text/plain',
+        fileName: 'a.txt',
+      }) as ReadStream;
+
+      expect(header).toHaveBeenCalledWith('Content-Length', '3');
+      stream.destroy();
+      await new Promise<void>((resolve) => {
+        stream.once('close', () => resolve());
+      });
+      await expect(access(outputPath)).rejects.toThrow();
     });
   });
 });

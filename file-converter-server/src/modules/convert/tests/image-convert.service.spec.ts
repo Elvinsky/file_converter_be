@@ -1,3 +1,6 @@
+import { rm } from 'node:fs/promises';
+import { Readable } from 'node:stream';
+
 import { ConfigService } from '@/core/config/config.service';
 import { TransformationHistoryService } from '@/modules/transformations/services/transformation-history.service';
 import sharp from 'sharp';
@@ -37,9 +40,17 @@ function part(
   return {
     filename,
     mimetype,
-    toBuffer: () => Promise.resolve(body),
     fields,
+    file: Readable.from(body),
   };
+}
+
+async function metadataOf(result: { outputPath: string }) {
+  try {
+    return await sharp(result.outputPath).metadata();
+  } finally {
+    await rm(result.outputPath, { force: true });
+  }
 }
 
 describe('ImageConvertService', () => {
@@ -59,13 +70,17 @@ describe('ImageConvertService', () => {
       filename: 'pixel.png',
       mimetype: 'image/png',
       fields,
-      toBuffer: () => {
-        fields.targetFormat = { value: 'jpeg' };
-        return Promise.resolve(TINY_PNG);
-      },
+      file: new Readable({
+        read() {
+          fields.targetFormat = { value: 'jpeg' };
+          this.push(TINY_PNG);
+          this.push(null);
+        },
+      }),
     });
 
     expect(result.fileName).toBe('converted.jpeg');
+    await rm(result.outputPath, { force: true });
   });
 
   it('accepts jpg as a JPEG target', async () => {
@@ -77,6 +92,7 @@ describe('ImageConvertService', () => {
 
     expect(result.contentType).toBe('image/jpeg');
     expect(result.fileName).toBe('converted.jpeg');
+    await rm(result.outputPath, { force: true });
   });
 
   it('converts PNG to JPEG', async () => {
@@ -86,7 +102,7 @@ describe('ImageConvertService', () => {
         quality: { value: '70' },
       }),
     );
-    const meta = await sharp(result.body).metadata();
+    const meta = await metadataOf(result);
 
     expect(result.fileName).toBe('converted.jpeg');
     expect(result.contentType).toBe('image/jpeg');
@@ -100,7 +116,7 @@ describe('ImageConvertService', () => {
         targetFormat: { value: 'png' },
       }),
     );
-    const meta = await sharp(result.body).metadata();
+    const meta = await metadataOf(result);
 
     expect(result.fileName).toBe('converted.png');
     expect(meta.format).toBe('png');
@@ -116,7 +132,7 @@ describe('ImageConvertService', () => {
         background: { value: '#000000' },
       }),
     );
-    const meta = await sharp(result.body).metadata();
+    const meta = await metadataOf(result);
 
     expect(meta.format).toBe('png');
     expect(meta.width).toBe(8);
@@ -139,7 +155,7 @@ describe('ImageConvertService', () => {
         targetFormat: { value: 'jpeg' },
       }),
     );
-    const meta = await sharp(result.body).metadata();
+    const meta = await metadataOf(result);
 
     expect(meta.format).toBe('jpeg');
     expect(meta.hasAlpha).not.toBe(true);
@@ -157,7 +173,22 @@ describe('ImageConvertService', () => {
     });
   });
 
-  it('rejects an SVG that contains a script', async () => {
+  it('strips a script and still rasterizes the remaining SVG', async () => {
+    const svg = Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><script>alert(1)</script><rect width="8" height="8" fill="red"/></svg>',
+    );
+    const result = await service.convert(
+      part(svg, 'box.svg', 'image/svg+xml', {
+        targetFormat: { value: 'png' },
+      }),
+    );
+    const meta = await metadataOf(result);
+
+    expect(meta.format).toBe('png');
+    expect(meta.width).toBe(8);
+  });
+
+  it('rejects an SVG whose only payload is a script', async () => {
     const svg = Buffer.from(
       '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><script>alert(1)</script></svg>',
     );
@@ -271,5 +302,6 @@ describe('ImageConvertService', () => {
         save: false,
       }),
     );
+    await rm(result.outputPath, { force: true });
   });
 });

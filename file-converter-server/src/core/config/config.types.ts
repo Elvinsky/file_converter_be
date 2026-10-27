@@ -91,6 +91,7 @@ export interface Config {
   CONVERT_TIMEOUT_MS: number;
   CONVERT_MAX_DEPTH: number;
   CONVERT_MAX_KEYS: number;
+  CONVERT_MAX_NODES: number;
   CONVERT_MAX_CSV_ROWS: number;
   CONVERT_YAML_MAX_ALIASES: number;
   CONVERT_WORKER_POOL_SIZE: number;

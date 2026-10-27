@@ -18,6 +18,7 @@ export type TextCodecLimits = {
   maxCsvRows?: number;
   maxDepth?: number;
   maxKeys?: number;
+  maxNodes?: number;
   maxYamlAliases?: number;
 };
 
@@ -45,12 +46,20 @@ export const TEXT_CODECS: Record<TargetFormat, TextCodec> = {
   },
   [TargetFormat.JSON]: {
     parse: (text, limits) =>
-      parseJson(text, { maxDepth: limits.maxDepth, maxKeys: limits.maxKeys }),
+      parseJson(text, {
+        maxDepth: limits.maxDepth,
+        maxKeys: limits.maxKeys,
+        maxNodes: limits.maxNodes,
+      }),
     serialize: (ir) => serializeValue(ir, serializeJson),
   },
   [TargetFormat.XML]: {
     parse: (text, limits) =>
-      parseXml(text, { maxDepth: limits.maxDepth, maxKeys: limits.maxKeys }),
+      parseXml(text, {
+        maxDepth: limits.maxDepth,
+        maxKeys: limits.maxKeys,
+        maxNodes: limits.maxNodes,
+      }),
     serialize: (ir) => serializeValue(ir, serializeXml),
   },
   [TargetFormat.YAML]: {
@@ -58,6 +67,7 @@ export const TEXT_CODECS: Record<TargetFormat, TextCodec> = {
       parseYaml(text, {
         maxDepth: limits.maxDepth,
         maxKeys: limits.maxKeys,
+        maxNodes: limits.maxNodes,
         maxAliases: limits.maxYamlAliases,
       }),
     serialize: (ir) => serializeValue(ir, serializeYaml),

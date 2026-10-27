@@ -12,7 +12,8 @@ class FakeWorker extends EventEmitter {
       this.emit('message', {
         id: message.id,
         ok: true,
-        body: Buffer.from('ok'),
+        outputPath: '/tmp/converted.json',
+        size: 2,
         contentType: 'application/json; charset=utf-8',
         fileName: 'converted.json',
       });
@@ -61,7 +62,7 @@ describe('ConversionWorkerPool', () => {
     await expect(
       pool.run({
         kind: 'text',
-        text: '{}',
+        sourcePath: '/tmp/sample.json',
         source: 'json',
         target: 'csv',
         limits: {},
@@ -69,6 +70,7 @@ describe('ConversionWorkerPool', () => {
     ).resolves.toMatchObject({
       fileName: 'converted.json',
       contentType: 'application/json; charset=utf-8',
+      outputPath: '/tmp/converted.json',
     });
 
     await pool.onModuleDestroy();
@@ -84,7 +86,7 @@ describe('ConversionWorkerPool', () => {
     await expect(
       pool.run({
         kind: 'text',
-        text: '{}',
+        sourcePath: '/tmp/sample.json',
         source: 'json',
         target: 'csv',
         limits: {},

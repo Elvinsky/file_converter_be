@@ -1,6 +1,8 @@
 import { HttpException } from '@nestjs/common';
 import { parentPort } from 'node:worker_threads';
 
+import { convertTextFile } from '../codecs/convert-text-file';
+import { TextCodecLimits } from '../codecs/text-codecs';
 import { TargetFormat } from '../dto/text-convert.dto';
 import {
   CONVERT_ERROR_CODES,
@@ -8,14 +10,11 @@ import {
 } from '../errors/convert.errors';
 import { ImageSourceFormat, ImageTargetFormat } from '../images/image-graph';
 import { runImageConversion } from '../images/run-image-conversion';
-import { runTextConversion } from '../codecs/text-codecs';
-import { TextCodecLimits } from '../codecs/text-codecs';
 
 type WorkerJob = {
   id: number;
   kind: 'text' | 'image';
-  text?: string;
-  body?: Uint8Array;
+  sourcePath: string;
   source: string;
   target: string;
   limits?: TextCodecLimits;
@@ -37,7 +36,7 @@ if (parentPort) {
 async function handle(job: WorkerJob): Promise<void> {
   try {
     const result =
-      job.kind === 'text' ? convertText(job) : await convertImage(job);
+      job.kind === 'text' ? await convertText(job) : await convertImage(job);
 
     if (!result) {
       reply(job.id, {
@@ -50,7 +49,8 @@ async function handle(job: WorkerJob): Promise<void> {
 
     reply(job.id, {
       ok: true,
-      body: result.body,
+      outputPath: result.outputPath,
+      size: result.size,
       contentType: result.contentType,
       fileName: result.fileName,
     });
@@ -60,8 +60,8 @@ async function handle(job: WorkerJob): Promise<void> {
 }
 
 function convertText(job: WorkerJob) {
-  return runTextConversion(
-    job.text ?? '',
+  return convertTextFile(
+    job.sourcePath,
     job.source as TargetFormat,
     job.target as TargetFormat,
     job.limits ?? {},
@@ -70,7 +70,7 @@ function convertText(job: WorkerJob) {
 
 function convertImage(job: WorkerJob) {
   return runImageConversion({
-    body: Buffer.from(job.body ?? new Uint8Array()),
+    sourcePath: job.sourcePath,
     source: job.source as ImageSourceFormat,
     target: job.target as ImageTargetFormat,
     width: job.width,

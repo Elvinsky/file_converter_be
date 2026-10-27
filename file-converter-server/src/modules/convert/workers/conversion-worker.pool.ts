@@ -16,7 +16,8 @@ import { ConversionJob, ConversionResult } from './conversion-job';
 type WorkerResponse = {
   id: number;
   ok: boolean;
-  body?: Uint8Array;
+  outputPath?: string;
+  size?: number;
   contentType?: string;
   fileName?: string;
   code?: string;
@@ -133,14 +134,7 @@ export class ConversionWorkerPool implements OnModuleDestroy {
 
       next.worker = worker;
       this.workerJob.set(worker, next.id);
-      const copy =
-        next.job.kind === 'image' ? Buffer.from(next.job.body) : undefined;
-
-      worker.postMessage(
-        copy
-          ? { ...next.job, id: next.id, body: copy }
-          : { ...next.job, id: next.id },
-      );
+      worker.postMessage({ ...next.job, id: next.id });
     }
   }
 
@@ -156,9 +150,16 @@ export class ConversionWorkerPool implements OnModuleDestroy {
     clearTimeout(pending.timer);
     this.pending.delete(message.id);
 
-    if (message.ok && message.body && message.contentType && message.fileName) {
+    if (
+      message.ok &&
+      message.outputPath &&
+      message.contentType &&
+      message.fileName &&
+      typeof message.size === 'number'
+    ) {
       pending.resolve({
-        body: Buffer.from(message.body),
+        outputPath: message.outputPath,
+        size: message.size,
         contentType: message.contentType,
         fileName: message.fileName,
       });

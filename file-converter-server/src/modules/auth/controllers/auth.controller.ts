@@ -114,10 +114,18 @@ export class AuthController {
   @Post('logout')
   @ApiOperation({
     summary: 'Log out',
-    description: 'Clears the access_token and refresh_token cookies.',
+    description:
+      'Revokes the current access and refresh tokens, then clears the auth cookies.',
   })
   @ApiCreatedResponse({ type: MessageResponseDto })
-  logout(@Res({ passthrough: true }) reply: FastifyReply) {
+  async logout(
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    await this.authService.logout(
+      request.cookies?.access_token,
+      request.cookies?.refresh_token,
+    );
     clearAuthCookies(reply);
 
     return { message: 'Logged out' };
